@@ -21,10 +21,10 @@ The system operates in **four key stages**:
 
 The project uses the **IAM Handwriting Dataset** for training and evaluation.
 
-| Dataset                  | Link      |
-| ------------------------ | ------------------ |
+| Dataset                       | Link                                                                                                                                                        |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | IAM Handwritten Forms Dataset | [https://www.kaggle.com/datasets/naderabdalghani/iam-handwritten-forms-dataset](https://www.kaggle.com/datasets/naderabdalghani/iam-handwritten-forms-dataset) |
-| iam_handwriting_word_database | [https://www.kaggle.com/datasets/nibinv23/iam-handwriting-word-database](https://www.kaggle.com/datasets/nibinv23/iam-handwriting-word-database) |
+| iam_handwriting_word_database | [https://www.kaggle.com/datasets/nibinv23/iam-handwriting-word-database](https://www.kaggle.com/datasets/nibinv23/iam-handwriting-word-database)               |
 
 ## 🚀 Features
 
@@ -33,6 +33,6 @@ The project uses the **IAM Handwriting Dataset** for training and evaluation.
 * Next-word prediction via language modeling
 * Handwriting-style synthesis for personalized rendering
 
-## 🚀 Projected Methodology
+## 📄 Projected Methodology
 
 ![1760980413929](image/README/1760980413929.png)
