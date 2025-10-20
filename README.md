@@ -8,10 +8,10 @@ A deep learning–based system for **predicting and auto-completing handwriting*
 
 The system operates in **four key stages**:
 
-**1. Input Capture & Preprocessing**: Normalize and segment raw pen strokes.
-**2. Handwriting Recognition**: Convert preprocessed strokes into digital text (**Strokes → Text**).
-**3. Next-Word Prediction**: Use a language model to suggest the next words (**Text → Text**).
-**4. Handwriting Style Synthesis**: Render predicted text in the user's handwriting style (**Text → Strokes/Image**).
+- **Input Capture & Preprocessing**: Normalize and segment raw pen strokes.
+- **Handwriting Recognition**: Convert preprocessed strokes into digital text (**Strokes → Text**).
+- **Next-Word Prediction**: Use a language model to suggest the next words (**Text → Text**).
+- **Handwriting Style Synthesis**: Render predicted text in the user's handwriting style (**Text → Strokes/Image**).
 
 ![1760980679239](image/README/1760980679239.png)
 
