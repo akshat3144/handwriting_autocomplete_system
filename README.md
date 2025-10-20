@@ -5,6 +5,7 @@ A deep learning–based system for **predicting and auto-completing handwriting*
 ---
 
 ## 🧩 Pipeline Overview
+
 The system operates in **four key stages**:
 
 **1. Input Capture & Preprocessing**: Normalize and segment raw pen strokes.
@@ -16,6 +17,14 @@ The system operates in **four key stages**:
 
 ---
 
+## 📂 Datasets
+
+The project uses the **IAM Handwriting Dataset** for training and evaluation.
+
+| Dataset                  | Link      |
+| ------------------------ | ------------------ |
+| IAM Handwritten Forms Dataset | [https://www.kaggle.com/datasets/naderabdalghani/iam-handwritten-forms-dataset](https://www.kaggle.com/datasets/naderabdalghani/iam-handwritten-forms-dataset) |
+
 ## 🚀 Features
 
 * Real-time handwriting capture and normalization
@@ -23,6 +32,6 @@ The system operates in **four key stages**:
 * Next-word prediction via language modeling
 * Handwriting-style synthesis for personalized rendering
 
-## 🚀 Projected Approach
+## 🚀 Projected Methodology
 
 ![1760980413929](image/README/1760980413929.png)
