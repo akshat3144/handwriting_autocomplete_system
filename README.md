@@ -24,6 +24,7 @@ The project uses the **IAM Handwriting Dataset** for training and evaluation.
 | Dataset                  | Link      |
 | ------------------------ | ------------------ |
 | IAM Handwritten Forms Dataset | [https://www.kaggle.com/datasets/naderabdalghani/iam-handwritten-forms-dataset](https://www.kaggle.com/datasets/naderabdalghani/iam-handwritten-forms-dataset) |
+| iam_handwriting_word_database | [https://www.kaggle.com/datasets/nibinv23/iam-handwriting-word-database](https://www.kaggle.com/datasets/nibinv23/iam-handwriting-word-database) |
 
 ## 🚀 Features
 

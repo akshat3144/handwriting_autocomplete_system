@@ -1,6 +1,5 @@
 """
-Handwritten Text Recognition Using Deep Learning: A CNN-LSTM Approach
-Based on the research paper implementation for IAM Dataset
+Handwritten Text Recognition Using Deep Learning
 """
 
 import os
