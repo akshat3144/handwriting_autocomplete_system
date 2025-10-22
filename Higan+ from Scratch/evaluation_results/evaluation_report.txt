@@ -1,0 +1,33 @@
+======================================================================
+HiGAN+ MODEL EVALUATION REPORT
+======================================================================
+
+Checkpoint: B:\College\DL\handwriting_autocomplete_system\Higan+ from Scratch\server_files\epoch_20.pth
+Epoch: 20
+Total Iterations: 130560
+Device: cuda
+
+----------------------------------------------------------------------
+
+TRAINING SUMMARY
+----------------------------------------------------------------------
+Total Epochs Trained: 20
+
+Generator Loss:
+  Initial: 74.070991
+  Final: 28.889342
+  Improvement: 61.00%
+
+Discriminator Loss:
+  Initial: 0.154742
+  Final: 0.809803
+  Improvement: -423.33%
+
+----------------------------------------------------------------------
+MODEL COMPONENTS
+----------------------------------------------------------------------
+Generator: 3,951,841 parameters
+Discriminator: 2,368,014 parameters
+Style Encoder: 148,032 parameters
+Patch Discriminator: 2,368,014 parameters
+Writer Identifier: 161,396 parameters

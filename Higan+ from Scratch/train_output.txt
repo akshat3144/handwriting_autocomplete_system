@@ -1,0 +1,163 @@
+Device: cuda
+Output Directory: B:\College\DL\handwriting_autocomplete_system\Higan+ from Scratch\evaluation_results
+
+============================================================
+LOADING CHECKPOINT
+============================================================
+✓ Loaded checkpoint from epoch 20
+✓ Training iterations completed: 130560
+
+Checkpoint keys: ['epoch', 'generator', 'discriminator', 'style_encoder', 'patch_discriminator', 'writer_identifier', 'optimizer_G', 'optimizer_D', 'lr_scheduler_G', 'lr_scheduler_D', 'history', 'iter_count']
+
+--- Training History ---
+epoch: 20 epochs recorded
+g_loss: 20 epochs recorded
+d_loss: 20 epochs recorded
+adv_loss: 20 epochs recorded
+ctc_loss: 20 epochs recorded
+wid_loss: 20 epochs recorded
+recn_loss: 20 epochs recorded
+
+============================================================
+ANALYZING TRAINING CURVES
+============================================================
+✓ Saved training curves to B:\College\DL\handwriting_autocomplete_system\Higan+ from Scratch\evaluation_results\training_curves.png
+
+--- Training Statistics Summary ---
+               final        min        max        avg  improvement
+g_loss     28.889342  28.889342  74.070991  35.686412    60.997765
+d_loss      0.809803   0.118408   0.809803   0.604940  -423.326148
+adv_loss    3.694045   3.694045   6.041302   4.258486    29.278165
+ctc_loss    1.209572   1.209572  16.860937   3.109513    92.826185
+wid_loss    2.700991   2.685992  11.501977   4.590241    76.517154
+recn_loss   0.317497   0.317497   0.381324   0.332063    16.738076
+✓ Saved statistics to B:\College\DL\handwriting_autocomplete_system\Higan+ from Scratch\evaluation_results\training_statistics.csv
+
+============================================================
+CONVERGENCE ANALYSIS
+============================================================
+✓ Saved convergence analysis to B:\College\DL\handwriting_autocomplete_system\Higan+ from Scratch\evaluation_results\convergence_analysis.png
+
+--- Convergence Metrics ---
+Final G/D Ratio: 35.6745
+Avg G/D Ratio (last 5 epochs): 37.0398
+⚠ Generator is stronger - May indicate mode collapse risk
+
+============================================================
+COMPONENT LOSS BREAKDOWN
+============================================================
+✓ Saved component losses to B:\College\DL\handwriting_autocomplete_system\Higan+ from Scratch\evaluation_results\component_losses.png
+
+--- Final Component Loss Values ---
+Adversarial: 3.694045
+CTC (OCR): 1.209572
+Writer ID: 2.700991
+Reconstruction: 0.317497
+
+============================================================
+MODEL STATE ANALYSIS
+============================================================
+
+--- Model Components in Checkpoint ---
+✓ Generator: 3,951,841 parameters
+  ✓ All parameters are valid (no NaN/Inf)
+✓ Discriminator: 2,368,014 parameters
+  ✓ All parameters are valid (no NaN/Inf)
+✓ Style Encoder: 148,032 parameters
+  ✓ All parameters are valid (no NaN/Inf)
+✓ Patch Discriminator: 2,368,014 parameters
+  ✓ All parameters are valid (no NaN/Inf)
+✓ Writer Identifier: 161,396 parameters
+  ✓ All parameters are valid (no NaN/Inf)
+
+============================================================
+OPTIMIZER STATE ANALYSIS
+============================================================
+
+--- Optimizer G ---
+  Parameter Group 0:
+    Learning Rate: 0.0002
+    Weight Decay: 0
+    Beta1: 0.5
+    Beta2: 0.999
+
+--- Optimizer D ---
+  Parameter Group 0:
+    Learning Rate: 0.0002
+    Weight Decay: 0
+    Beta1: 0.5
+    Beta2: 0.999
+
+============================================================
+LEARNING RATE SCHEDULE
+============================================================
+
+--- Lr Scheduler G ---
+  Last Epoch: 19
+  Last LR: [0.0002]
+
+--- Lr Scheduler D ---
+  Last Epoch: 19
+  Last LR: [0.0002]
+
+============================================================
+GENERATING COMPREHENSIVE REPORT
+============================================================
+======================================================================
+HiGAN+ MODEL EVALUATION REPORT
+======================================================================
+
+Checkpoint: B:\College\DL\handwriting_autocomplete_system\Higan+ from Scratch\server_files\epoch_20.pth
+Epoch: 20
+Total Iterations: 130560
+Device: cuda
+
+----------------------------------------------------------------------
+
+TRAINING SUMMARY
+----------------------------------------------------------------------
+Total Epochs Trained: 20
+
+Generator Loss:
+  Initial: 74.070991
+  Final: 28.889342
+  Improvement: 61.00%
+
+Discriminator Loss:
+  Initial: 0.154742
+  Final: 0.809803
+  Improvement: -423.33%
+
+----------------------------------------------------------------------
+MODEL COMPONENTS
+----------------------------------------------------------------------
+Generator: 3,951,841 parameters
+Discriminator: 2,368,014 parameters
+Style Encoder: 148,032 parameters
+Patch Discriminator: 2,368,014 parameters
+Writer Identifier: 161,396 parameters
+
+✓ Full report saved to B:\College\DL\handwriting_autocomplete_system\Higan+ from Scratch\evaluation_results\evaluation_report.txt
+
+============================================================
+EVALUATION COMPLETE
+============================================================
+
+All results saved to: B:\College\DL\handwriting_autocomplete_system\Higan+ from Scratch\evaluation_results
+
+Generated files:
+  - training_curves.png
+  - convergence_analysis.png
+  - component_losses.png
+  - training_statistics.csv
+  - evaluation_report.txt
+
+============================================================
+RECOMMENDATIONS
+============================================================
+⚠ High loss values detected - consider:
+  - Reducing learning rate
+  - Checking for gradient explosion
+  - Reviewing loss weighting
+
+============================================================
