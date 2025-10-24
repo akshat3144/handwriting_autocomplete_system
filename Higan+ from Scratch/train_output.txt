@@ -161,3 +161,970 @@ RECOMMENDATIONS
   - Reviewing loss weighting
 
 ============================================================
+C:\Users\PC\AppData\Local\Temp\ipykernel_52772\3704471444.py:17: DeprecationWarning: ANTIALIAS is deprecated and will be removed in Pillow 10 (2023-07-01). Use LANCZOS or Resampling.LANCZOS instead.
+  if not hasattr(Image, "ANTIALIAS"):
+Project path: B:\College\DL\handwriting_autocomplete_system\Higan+ from Scratch
+PyTorch version: 2.8.0+cu129
+CUDA available: True
+CUDA device: NVIDIA GeForce RTX 4050 Laptop GPU
+
+Using device: cuda
+Configuration loaded!
+Dataset: iam_word_org
+Model: gl_adversarial_model
+Batch size: 8
+Epochs: 70
+Image height: 64
+Character width: 32
+Current working directory: B:\College\DL\handwriting_autocomplete_system\Higan+ from Scratch
+
+Loading dataset...
+Training samples: 52231
+Test samples: 11170
+Training batches: 6528
+9.5.0
+
+Batch shape: torch.Size([8, 1, 64, 352])
+Label shape: torch.Size([8, 11])
+Sample texts: ['destruction', 'Sufolk', 'power', 'While']
+Initializing HiGAN+ model components...
+✓ Generator initialized - Style dim: 32
+✓ Discriminators initialized (Global + Patch)
+✓ Style Encoder initialized
+✓ OCR Recognizer initialized
+✓ Writer Identifier initialized
+
+--- Model Parameters ---
+Generator: 3,935,937
+Discriminator: 2,366,145
+Patch Discriminator: 2,366,145
+Style Encoder: 148,032
+Style Backbone: 1,617,328
+Recognizer: 2,428,416
+Writer ID: 161,396
+
+Total Parameters: 13,023,399
+
+Loading pretrained auxiliary models...
+✓ Loaded pretrained OCR from ./pretrained/ocr_iam_new.pth
+✓ Loaded pretrained Writer ID from ./pretrained/wid_iam_new.pth
+
+✓ OCR and Writer ID networks frozen for GAN training
+Setting up optimizers and loss functions...
+✓ Optimizers initialized (lr=0.0002)
+✓ LR Schedulers initialized (linear)
+✓ Loss functions initialized
+✓ Lexicon loaded: 465593 words
+✓ Random distributions initialized
+
+✓ Training setup complete!
+Starting training...
+Training for 70 epochs
+Batch size: 8
+------------------------------------------------------------
+Device: cuda
+Output Directory: B:\College\DL\handwriting_autocomplete_system\Higan+ from Scratch\evaluation_results
+
+============================================================
+LOADING CHECKPOINT
+============================================================
+✓ Loaded checkpoint from epoch 20
+✓ Training iterations completed: 130560
+
+Checkpoint keys: ['epoch', 'generator', 'discriminator', 'style_encoder', 'patch_discriminator', 'writer_identifier', 'optimizer_G', 'optimizer_D', 'lr_scheduler_G', 'lr_scheduler_D', 'history', 'iter_count']
+
+--- Training History ---
+epoch: 20 epochs recorded
+g_loss: 20 epochs recorded
+d_loss: 20 epochs recorded
+adv_loss: 20 epochs recorded
+ctc_loss: 20 epochs recorded
+wid_loss: 20 epochs recorded
+recn_loss: 20 epochs recorded
+
+============================================================
+ANALYZING TRAINING CURVES
+============================================================
+✓ Saved training curves to B:\College\DL\handwriting_autocomplete_system\Higan+ from Scratch\evaluation_results\training_curves.png
+
+--- Training Statistics Summary ---
+               final        min        max        avg  improvement
+g_loss     28.889342  28.889342  74.070991  35.686412    60.997765
+d_loss      0.809803   0.118408   0.809803   0.604940  -423.326148
+adv_loss    3.694045   3.694045   6.041302   4.258486    29.278165
+ctc_loss    1.209572   1.209572  16.860937   3.109513    92.826185
+wid_loss    2.700991   2.685992  11.501977   4.590241    76.517154
+recn_loss   0.317497   0.317497   0.381324   0.332063    16.738076
+✓ Saved statistics to B:\College\DL\handwriting_autocomplete_system\Higan+ from Scratch\evaluation_results\training_statistics.csv
+
+============================================================
+CONVERGENCE ANALYSIS
+============================================================
+✓ Saved convergence analysis to B:\College\DL\handwriting_autocomplete_system\Higan+ from Scratch\evaluation_results\convergence_analysis.png
+
+--- Convergence Metrics ---
+Final G/D Ratio: 35.6745
+Avg G/D Ratio (last 5 epochs): 37.0398
+⚠ Generator is stronger - May indicate mode collapse risk
+
+============================================================
+COMPONENT LOSS BREAKDOWN
+============================================================
+✓ Saved component losses to B:\College\DL\handwriting_autocomplete_system\Higan+ from Scratch\evaluation_results\component_losses.png
+
+--- Final Component Loss Values ---
+Adversarial: 3.694045
+CTC (OCR): 1.209572
+Writer ID: 2.700991
+Reconstruction: 0.317497
+
+============================================================
+MODEL STATE ANALYSIS
+============================================================
+
+--- Model Components in Checkpoint ---
+✓ Generator: 3,951,841 parameters
+  ✓ All parameters are valid (no NaN/Inf)
+✓ Discriminator: 2,368,014 parameters
+  ✓ All parameters are valid (no NaN/Inf)
+✓ Style Encoder: 148,032 parameters
+  ✓ All parameters are valid (no NaN/Inf)
+✓ Patch Discriminator: 2,368,014 parameters
+  ✓ All parameters are valid (no NaN/Inf)
+✓ Writer Identifier: 161,396 parameters
+  ✓ All parameters are valid (no NaN/Inf)
+
+============================================================
+OPTIMIZER STATE ANALYSIS
+============================================================
+
+--- Optimizer G ---
+  Parameter Group 0:
+    Learning Rate: 0.0002
+    Weight Decay: 0
+    Beta1: 0.5
+    Beta2: 0.999
+
+--- Optimizer D ---
+  Parameter Group 0:
+    Learning Rate: 0.0002
+    Weight Decay: 0
+    Beta1: 0.5
+    Beta2: 0.999
+
+============================================================
+LEARNING RATE SCHEDULE
+============================================================
+
+--- Lr Scheduler G ---
+  Last Epoch: 19
+  Last LR: [0.0002]
+
+--- Lr Scheduler D ---
+  Last Epoch: 19
+  Last LR: [0.0002]
+
+============================================================
+GENERATING COMPREHENSIVE REPORT
+============================================================
+======================================================================
+HiGAN+ MODEL EVALUATION REPORT
+======================================================================
+
+Checkpoint: B:\College\DL\handwriting_autocomplete_system\Higan+ from Scratch\server_files\epoch_20.pth
+Epoch: 20
+Total Iterations: 130560
+Device: cuda
+
+----------------------------------------------------------------------
+
+TRAINING SUMMARY
+----------------------------------------------------------------------
+Total Epochs Trained: 20
+
+Generator Loss:
+  Initial: 74.070991
+  Final: 28.889342
+  Improvement: 61.00%
+
+Discriminator Loss:
+  Initial: 0.154742
+  Final: 0.809803
+  Improvement: -423.33%
+
+----------------------------------------------------------------------
+MODEL COMPONENTS
+----------------------------------------------------------------------
+Generator: 3,951,841 parameters
+Discriminator: 2,368,014 parameters
+Style Encoder: 148,032 parameters
+Patch Discriminator: 2,368,014 parameters
+Writer Identifier: 161,396 parameters
+
+✓ Full report saved to B:\College\DL\handwriting_autocomplete_system\Higan+ from Scratch\evaluation_results\evaluation_report.txt
+
+============================================================
+EVALUATION COMPLETE
+============================================================
+
+All results saved to: B:\College\DL\handwriting_autocomplete_system\Higan+ from Scratch\evaluation_results
+
+Generated files:
+  - training_curves.png
+  - convergence_analysis.png
+  - component_losses.png
+  - training_statistics.csv
+  - evaluation_report.txt
+
+============================================================
+RECOMMENDATIONS
+============================================================
+⚠ High loss values detected - consider:
+  - Reducing learning rate
+  - Checking for gradient explosion
+  - Reviewing loss weighting
+
+============================================================
+Device: cuda
+Output Directory: B:\College\DL\handwriting_autocomplete_system\Higan+ from Scratch\evaluation_results
+Samples for evaluation: 1000
+
+============================================================
+STEP 1: LOADING MODEL ARCHITECTURES
+============================================================
+✓ Loaded checkpoint from epoch 20
+
+⚠ IMPORTANT: You need to initialize your models here!
+Add the following code after importing your model classes:
+
+    # Initialize Generator
+    generator = Generator(**cfg.GenModel).to(DEVICE)
+    generator.load_state_dict(checkpoint['generator'])
+    generator.eval()
+
+    # Initialize Style Encoder
+    style_encoder = StyleEncoder(**cfg.EncModel).to(DEVICE)
+    style_encoder.load_state_dict(checkpoint['style_encoder'])
+    style_encoder.eval()
+
+    # Initialize Recognizer (for CER/WER)
+    recognizer = Recognizer(**cfg.OcrModel).to(DEVICE)
+    recognizer.load_state_dict(checkpoint.get('recognizer', {}))
+    recognizer.eval()
+
+    # Initialize Style Backbone
+    style_backbone = StyleBackbone(**cfg.StyBackbone).to(DEVICE)
+    style_backbone.load_state_dict(checkpoint.get('style_backbone', {}))
+    style_backbone.eval()
+    
+
+============================================================
+STEP 2: LOADING INCEPTION MODEL FOR FID/KID/IS
+============================================================
+Downloading: "https://download.pytorch.org/models/inception_v3_google-0cc3c7bd.pth" to C:\Users\PC/.cache\torch\hub\checkpoints\inception_v3_google-0cc3c7bd.pth
+
+  0%|          | 0.00/104M [00:00<?, ?B/s]
+  1%|          | 1.25M/104M [00:00<00:08, 12.9MB/s]
+  3%|▎         | 3.38M/104M [00:00<00:05, 18.4MB/s]
+  6%|▌         | 6.25M/104M [00:00<00:04, 23.5MB/s]
+  9%|▉         | 9.25M/104M [00:00<00:03, 26.5MB/s]
+ 11%|█▏        | 11.9M/104M [00:00<00:03, 26.7MB/s]
+ 14%|█▍        | 14.6M/104M [00:00<00:03, 27.4MB/s]
+ 17%|█▋        | 17.9M/104M [00:00<00:03, 29.2MB/s]
+ 20%|██        | 21.0M/104M [00:00<00:02, 30.3MB/s]
+ 23%|██▎       | 24.0M/104M [00:00<00:02, 30.6MB/s]
+ 26%|██▌       | 27.0M/104M [00:01<00:02, 30.6MB/s]
+ 29%|██▉       | 30.2M/104M [00:01<00:02, 31.5MB/s]
+ 32%|███▏      | 33.8M/104M [00:01<00:02, 32.7MB/s]
+ 35%|███▌      | 36.9M/104M [00:01<00:02, 32.3MB/s]
+ 39%|███▉      | 40.6M/104M [00:01<00:01, 33.4MB/s]
+ 43%|████▎     | 44.4M/104M [00:01<00:01, 35.0MB/s]
+ 46%|████▌     | 47.8M/104M [00:01<00:01, 34.4MB/s]
+ 49%|████▉     | 51.1M/104M [00:01<00:01, 34.6MB/s]
+ 52%|█████▏    | 54.5M/104M [00:01<00:01, 34.1MB/s]
+ 56%|█████▌    | 57.9M/104M [00:01<00:01, 34.2MB/s]
+ 59%|█████▉    | 61.2M/104M [00:02<00:01, 32.5MB/s]
+ 62%|██████▏   | 64.6M/104M [00:02<00:01, 32.7MB/s]
+ 65%|██████▌   | 67.9M/104M [00:02<00:01, 27.7MB/s]
+ 68%|██████▊   | 70.9M/104M [00:02<00:01, 28.6MB/s]
+ 71%|███████   | 74.0M/104M [00:02<00:01, 29.7MB/s]
+ 74%|███████▍  | 77.0M/104M [00:02<00:00, 30.1MB/s]
+ 77%|███████▋  | 80.0M/104M [00:02<00:00, 29.8MB/s]
+ 80%|███████▉  | 83.0M/104M [00:02<00:00, 30.0MB/s]
+ 83%|████████▎ | 86.5M/104M [00:02<00:00, 31.8MB/s]
+ 87%|████████▋ | 90.0M/104M [00:03<00:00, 33.2MB/s]
+ 90%|████████▉ | 93.2M/104M [00:03<00:00, 33.4MB/s]
+ 93%|█████████▎| 96.9M/104M [00:03<00:00, 33.6MB/s]
+ 96%|█████████▋| 100M/104M [00:03<00:00, 33.3MB/s] 
+ 99%|█████████▉| 103M/104M [00:03<00:00, 32.4MB/s]
+100%|██████████| 104M/104M [00:03<00:00, 31.1MB/s]
+✓ Inception v3 loaded for FID/KID/IS computation
+
+============================================================
+STEP 3: COMPREHENSIVE METRICS EVALUATION
+============================================================
+
+--- Metrics Evaluation Pipeline ---
+
+To run full evaluation, you need to:
+
+1. Load your dataset (real images + labels)
+2. Generate fake images using the trained generator
+3. Extract Inception features from both
+4. Calculate all metrics
+
+Example code structure:
+
+# Load test dataset
+test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
+
+# Collect real images
+real_images = []
+real_labels = []
+for batch in tqdm(test_loader, desc='Loading real data'):
+    real_images.append(batch['style_imgs'])
+    real_labels.extend(batch['labels'])  # Assuming labels are available
+    if len(real_images) * BATCH_SIZE >= NUM_SAMPLES:
+        break
+
+real_images = torch.cat(real_images)[:NUM_SAMPLES]
+
+# Generate fake images
+fake_images = []
+fake_labels = []
+with torch.no_grad():
+    for i in tqdm(range(0, NUM_SAMPLES, BATCH_SIZE), desc='Generating samples'):
+        # Sample random texts and styles
+        batch_size = min(BATCH_SIZE, NUM_SAMPLES - i)
+
+        # Generate random labels
+        # sample_labels = sample_random_labels(batch_size)
+
+        # Generate images
+        # z = torch.randn(batch_size, generator.style_dim).to(DEVICE)
+        # fake_batch = generator(z, sample_labels, label_lengths)
+
+        # fake_images.append(fake_batch.cpu())
+        # fake_labels.extend(decode_labels(sample_labels))
+
+fake_images = torch.cat(fake_images)
+
+# Calculate FID
+print('\nCalculating FID...')
+mu_real, sigma_real, acts_real = calculate_activation_statistics(
+    real_images, inception_model, FID_BATCH_SIZE
+)
+mu_fake, sigma_fake, acts_fake = calculate_activation_statistics(
+    fake_images, inception_model, FID_BATCH_SIZE
+)
+fid_score = calculate_fid(mu_real, sigma_real, mu_fake, sigma_fake)
+metrics_results['FID'] = fid_score
+print(f'✓ FID Score: {fid_score:.4f}')
+
+# Calculate KID
+print('\nCalculating KID...')
+kid_mean, kid_std = calculate_kid(acts_real, acts_fake)
+metrics_results['KID_mean'] = kid_mean
+metrics_results['KID_std'] = kid_std
+print(f'✓ KID Score: {kid_mean:.4f} ± {kid_std:.4f}')
+
+# Calculate IS
+print('\nCalculating Inception Score...')
+is_mean, is_std = calculate_inception_score(acts_fake)
+metrics_results['IS_mean'] = is_mean
+metrics_results['IS_std'] = is_std
+print(f'✓ Inception Score: {is_mean:.4f} ± {is_std:.4f}')
+
+# Calculate CER/WER (requires OCR predictions)
+print('\nCalculating CER/WER...')
+# pred_texts = run_ocr(fake_images, recognizer)
+# cer, wer = calculate_cer_wer(pred_texts, fake_labels)
+# metrics_results['CER'] = cer
+# metrics_results['WER'] = wer
+# print(f'✓ CER: {cer:.4f}')
+# print(f'✓ WER: {wer:.4f}')
+
+# Calculate MSSIM/PSNR (for reconstruction tasks)
+print('\nCalculating MSSIM/PSNR...')
+# For style transfer: compare generated images with their reconstructions
+# mssim_mean, mssim_std, psnr_mean, psnr_std = calculate_image_metrics(
+#     real_images[:100], reconstructed_images[:100]
+# )
+# metrics_results['MSSIM_mean'] = mssim_mean
+# metrics_results['MSSIM_std'] = mssim_std
+# metrics_results['PSNR_mean'] = psnr_mean
+# metrics_results['PSNR_std'] = psnr_std
+# print(f'✓ MSSIM: {mssim_mean:.4f} ± {mssim_std:.4f}')
+# print(f'✓ PSNR: {psnr_mean:.2f} ± {psnr_std:.2f} dB')
+
+
+============================================================
+DEMO: METRICS STRUCTURE AND BENCHMARKS
+============================================================
+
+--- Benchmark Interpretation Guide ---
+
+FID:
+  Excellent: < 20
+  Good: 20-50
+  Fair: 50-100
+  Poor: > 100
+
+KID:
+  Excellent: < 0.01
+  Good: 0.01-0.05
+  Fair: 0.05-0.10
+  Poor: > 0.10
+
+IS:
+  Excellent: > 10
+  Good: 5-10
+  Fair: 2-5
+  Poor: < 2
+
+CER:
+  Excellent: < 5%
+  Good: 5-10%
+  Fair: 10-20%
+  Poor: > 20%
+
+WER:
+  Excellent: < 10%
+  Good: 10-20%
+  Fair: 20-35%
+  Poor: > 35%
+
+MSSIM:
+  Excellent: > 0.90
+  Good: 0.80-0.90
+  Fair: 0.70-0.80
+  Poor: < 0.70
+
+PSNR:
+  Excellent: > 30 dB
+  Good: 25-30 dB
+  Fair: 20-25 dB
+  Poor: < 20 dB
+
+============================================================
+STEP 4: VISUALIZATION TEMPLATES
+============================================================
+
+============================================================
+COMPLETE INTEGRATION GUIDE
+============================================================
+
+To run full metrics evaluation, integrate this notebook with your training code:
+
+1. **Import your model classes** at the top:
+   ```python
+   from your_models import Generator, StyleEncoder, Recognizer, etc.
+   from your_config import cfg
+   from your_dataset import get_dataset, DataLoader
+   from your_utils import strLabelConverter, idx_to_words
+   ```
+
+2. **Initialize and load models**:
+   ```python
+   # Generator
+   generator = Generator(**cfg.GenModel).to(DEVICE)
+   generator.load_state_dict(checkpoint['generator'])
+   generator.eval()
+
+   # Style Encoder & Backbone
+   style_encoder = StyleEncoder(**cfg.EncModel).to(DEVICE)
+   style_encoder.load_state_dict(checkpoint['style_encoder'])
+   style_encoder.eval()
+
+   style_backbone = StyleBackbone(**cfg.StyBackbone).to(DEVICE)
+   # Load from checkpoint or pretrained
+
+   # Recognizer for OCR
+   recognizer = Recognizer(**cfg.OcrModel).to(DEVICE)
+   # Load pretrained or from checkpoint
+   recognizer.eval()
+   ```
+
+3. **Load test dataset**:
+   ```python
+   test_dataset = get_dataset(cfg.valid.dset_name, cfg.valid.dset_split)
+   test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
+   ```
+
+4. **Generate samples and calculate metrics**:
+   - Follow the pipeline in STEP 3 above
+   - Call `plot_metrics_comparison()` for visualization
+   - Call `save_metrics_report()` for detailed report
+
+5. **Expected runtime**:
+   - FID/KID/IS: ~5-10 minutes for 1000 samples
+   - CER/WER: ~2-5 minutes
+   - MSSIM/PSNR: ~1-2 minutes
+   - Total: ~10-20 minutes
+
+6. **Memory requirements**:
+   - GPU: ~4-6 GB for evaluation
+   - RAM: ~8 GB for feature extraction
+
+
+✓ Integration guide saved to B:\College\DL\handwriting_autocomplete_system\Higan+ from Scratch\evaluation_results\integration_guide.txt
+
+============================================================
+SETUP COMPLETE - Ready for Metrics Evaluation
+============================================================
+
+Next steps:
+1. Import your model classes
+2. Initialize models with checkpoint weights
+3. Load your test dataset
+4. Run the evaluation pipeline
+5. Review metrics and visualizations
+Project path: B:\College\DL\handwriting_autocomplete_system\Higan+ from Scratch
+PyTorch version: 2.8.0+cu129
+CUDA available: True
+CUDA device: NVIDIA GeForce RTX 4050 Laptop GPU
+
+Using device: cuda
+Configuration loaded!
+Dataset: iam_word_org
+Model: gl_adversarial_model
+Batch size: 8
+Epochs: 70
+Image height: 64
+Character width: 32
+Current working directory: B:\College\DL\handwriting_autocomplete_system\Higan+ from Scratch
+
+Loading dataset...
+Training samples: 52231
+Test samples: 11170
+Training batches: 6528
+9.5.0
+
+Batch shape: torch.Size([8, 1, 64, 320])
+Label shape: torch.Size([8, 10])
+Sample texts: ['surounded', 'unreliable', 'ratures', 'spear']
+Dataset summary (word lengths):
+  Train -> samples: 52231, min: 2, max: 19, mean: 4.76, median: 4.00
+  Test -> samples: 11170, min: 2, max: 21, mean: 4.44, median: 4.00
+Unique writer IDs in training set: 372
+Initializing HiGAN+ model components...
+✓ Generator initialized - Style dim: 32
+✓ Discriminators initialized (Global + Patch)
+✓ Style Encoder initialized
+✓ OCR Recognizer initialized
+✓ Writer Identifier initialized
+
+--- Model Parameters ---
+Generator: 3,935,937
+Discriminator: 2,366,145
+Patch Discriminator: 2,366,145
+Style Encoder: 148,032
+Style Backbone: 1,617,328
+Recognizer: 2,428,416
+Writer ID: 161,396
+
+Total Parameters: 13,023,399
+
+Loading pretrained auxiliary models...
+✓ Loaded pretrained OCR from ./pretrained/ocr_iam_new.pth
+✓ Loaded pretrained Writer ID from ./pretrained/wid_iam_new.pth
+
+✓ OCR and Writer ID networks frozen for GAN training
+Setting up optimizers and loss functions...
+✓ Optimizers initialized (lr=0.0002)
+✓ LR Schedulers initialized (linear)
+✓ Loss functions initialized
+✓ Lexicon loaded: 465593 words
+✓ Random distributions initialized
+
+✓ Training setup complete!
+Starting training/evaluation pipeline...
+Target epochs from config: 70
+Batch size: 8
+------------------------------------------------------------
+
+Loading trained checkpoint for evaluation...
+✓ Loaded checkpoint 'epoch_20.pth' (epochs trained: 20)
+Fine-tuning disabled. Proceeding with evaluation only.
+RUN_TRAINING is False; logging redirection skipped.
+Device: cuda
+Output Directory: B:\College\DL\handwriting_autocomplete_system\Higan+ from Scratch\evaluation_results
+
+============================================================
+LOADING CHECKPOINT
+============================================================
+✓ Loaded checkpoint from epoch 20
+✓ Training iterations completed: 130560
+
+Checkpoint keys: ['epoch', 'generator', 'discriminator', 'style_encoder', 'patch_discriminator', 'writer_identifier', 'optimizer_G', 'optimizer_D', 'lr_scheduler_G', 'lr_scheduler_D', 'history', 'iter_count']
+
+--- Training History ---
+epoch: 20 epochs recorded
+g_loss: 20 epochs recorded
+d_loss: 20 epochs recorded
+adv_loss: 20 epochs recorded
+ctc_loss: 20 epochs recorded
+wid_loss: 20 epochs recorded
+recn_loss: 20 epochs recorded
+
+============================================================
+ANALYZING TRAINING CURVES
+============================================================
+✓ Saved training curves to B:\College\DL\handwriting_autocomplete_system\Higan+ from Scratch\evaluation_results\training_curves.png
+
+--- Training Statistics Summary ---
+               final        min        max        avg  improvement
+g_loss     28.889342  28.889342  74.070991  35.686412    60.997765
+d_loss      0.809803   0.118408   0.809803   0.604940  -423.326148
+adv_loss    3.694045   3.694045   6.041302   4.258486    29.278165
+ctc_loss    1.209572   1.209572  16.860937   3.109513    92.826185
+wid_loss    2.700991   2.685992  11.501977   4.590241    76.517154
+recn_loss   0.317497   0.317497   0.381324   0.332063    16.738076
+✓ Saved statistics to B:\College\DL\handwriting_autocomplete_system\Higan+ from Scratch\evaluation_results\training_statistics.csv
+
+============================================================
+CONVERGENCE ANALYSIS
+============================================================
+✓ Saved convergence analysis to B:\College\DL\handwriting_autocomplete_system\Higan+ from Scratch\evaluation_results\convergence_analysis.png
+
+--- Convergence Metrics ---
+Final G/D Ratio: 35.6745
+Avg G/D Ratio (last 5 epochs): 37.0398
+⚠ Generator is stronger - May indicate mode collapse risk
+
+============================================================
+COMPONENT LOSS BREAKDOWN
+============================================================
+✓ Saved component losses to B:\College\DL\handwriting_autocomplete_system\Higan+ from Scratch\evaluation_results\component_losses.png
+
+--- Final Component Loss Values ---
+Adversarial: 3.694045
+CTC (OCR): 1.209572
+Writer ID: 2.700991
+Reconstruction: 0.317497
+
+============================================================
+MODEL STATE ANALYSIS
+============================================================
+
+--- Model Components in Checkpoint ---
+✓ Generator: 3,951,841 parameters
+  ✓ All parameters are valid (no NaN/Inf)
+✓ Discriminator: 2,368,014 parameters
+  ✓ All parameters are valid (no NaN/Inf)
+✓ Style Encoder: 148,032 parameters
+  ✓ All parameters are valid (no NaN/Inf)
+✓ Patch Discriminator: 2,368,014 parameters
+  ✓ All parameters are valid (no NaN/Inf)
+✓ Writer Identifier: 161,396 parameters
+  ✓ All parameters are valid (no NaN/Inf)
+
+============================================================
+OPTIMIZER STATE ANALYSIS
+============================================================
+
+--- Optimizer G ---
+  Parameter Group 0:
+    Learning Rate: 0.0002
+    Weight Decay: 0
+    Beta1: 0.5
+    Beta2: 0.999
+
+--- Optimizer D ---
+  Parameter Group 0:
+    Learning Rate: 0.0002
+    Weight Decay: 0
+    Beta1: 0.5
+    Beta2: 0.999
+
+============================================================
+LEARNING RATE SCHEDULE
+============================================================
+
+--- Lr Scheduler G ---
+  Last Epoch: 19
+  Last LR: [0.0002]
+
+--- Lr Scheduler D ---
+  Last Epoch: 19
+  Last LR: [0.0002]
+
+============================================================
+GENERATING COMPREHENSIVE REPORT
+============================================================
+======================================================================
+HiGAN+ MODEL EVALUATION REPORT
+======================================================================
+
+Checkpoint: B:\College\DL\handwriting_autocomplete_system\Higan+ from Scratch\server_files\epoch_20.pth
+Epoch: 20
+Total Iterations: 130560
+Device: cuda
+
+----------------------------------------------------------------------
+
+TRAINING SUMMARY
+----------------------------------------------------------------------
+Total Epochs Trained: 20
+
+Generator Loss:
+  Initial: 74.070991
+  Final: 28.889342
+  Improvement: 61.00%
+
+Discriminator Loss:
+  Initial: 0.154742
+  Final: 0.809803
+  Improvement: -423.33%
+
+----------------------------------------------------------------------
+MODEL COMPONENTS
+----------------------------------------------------------------------
+Generator: 3,951,841 parameters
+Discriminator: 2,368,014 parameters
+Style Encoder: 148,032 parameters
+Patch Discriminator: 2,368,014 parameters
+Writer Identifier: 161,396 parameters
+
+✓ Full report saved to B:\College\DL\handwriting_autocomplete_system\Higan+ from Scratch\evaluation_results\evaluation_report.txt
+
+============================================================
+EVALUATION COMPLETE
+============================================================
+
+All results saved to: B:\College\DL\handwriting_autocomplete_system\Higan+ from Scratch\evaluation_results
+
+Generated files:
+  - training_curves.png
+  - convergence_analysis.png
+  - component_losses.png
+  - training_statistics.csv
+  - evaluation_report.txt
+
+============================================================
+RECOMMENDATIONS
+============================================================
+⚠ High loss values detected - consider:
+  - Reducing learning rate
+  - Checking for gradient explosion
+  - Reviewing loss weighting
+
+============================================================
+RUN_TRAINING is False. Using loaded weights without additional training.
+✓ Training loss curves saved as 'training_losses.png'
+
+Calculating OCR accuracy metrics...
+
+Evaluating OCR:   0%|          | 0/2793 [00:00<?, ?it/s]
+Evaluating OCR:   0%|          | 1/2793 [00:01<1:23:22,  1.79s/it]
+Evaluating OCR:   0%|          | 2/2793 [00:01<37:54,  1.23it/s]  
+Evaluating OCR:   0%|          | 3/2793 [00:02<25:22,  1.83it/s]
+Evaluating OCR:   0%|          | 4/2793 [00:02<23:06,  2.01it/s]
+Evaluating OCR:   0%|          | 5/2793 [00:02<16:59,  2.73it/s]
+Evaluating OCR:   0%|          | 7/2793 [00:02<10:33,  4.40it/s]
+Evaluating OCR:   0%|          | 9/2793 [00:03<07:30,  6.19it/s]
+Evaluating OCR:   0%|          | 11/2793 [00:03<05:35,  8.30it/s]
+Evaluating OCR:   0%|          | 13/2793 [00:03<04:42,  9.83it/s]
+Evaluating OCR:   1%|          | 15/2793 [00:03<05:32,  8.36it/s]
+Evaluating OCR:   1%|          | 18/2793 [00:03<04:00, 11.56it/s]
+Evaluating OCR:   1%|          | 20/2793 [00:04<05:11,  8.90it/s]
+Evaluating OCR:   1%|          | 23/2793 [00:04<03:55, 11.76it/s]
+Evaluating OCR:   1%|          | 26/2793 [00:04<03:16, 14.09it/s]
+Evaluating OCR:   1%|          | 29/2793 [00:04<02:51, 16.15it/s]
+Evaluating OCR:   1%|          | 32/2793 [00:04<02:32, 18.05it/s]
+Evaluating OCR:   1%|▏         | 35/2793 [00:04<02:15, 20.40it/s]
+Evaluating OCR:   1%|▏         | 38/2793 [00:04<02:03, 22.31it/s]
+Evaluating OCR:   1%|▏         | 41/2793 [00:04<01:56, 23.53it/s]
+Evaluating OCR:   2%|▏         | 44/2793 [00:05<01:53, 24.16it/s]
+Evaluating OCR:   2%|▏         | 48/2793 [00:05<01:45, 26.11it/s]
+Evaluating OCR:   2%|▏         | 50/2793 [00:05<04:45,  9.61it/s]
+
+============================================================
+OCR Performance Metrics:
+  Character Error Rate (CER): 2.96%
+  Word Error Rate (WER): 10.00%
+  Character Accuracy: 97.04%
+  Word Accuracy: 90.00%
+============================================================
+
+
+Calculating image quality metrics...
+
+Generating samples for metrics:   0%|          | 0/2793 [00:00<?, ?it/s]
+Generating samples for metrics:   0%|          | 5/2793 [00:00<01:07, 41.10it/s]
+Generating samples for metrics:   0%|          | 10/2793 [00:00<01:27, 31.96it/s]
+Generating samples for metrics:   1%|          | 14/2793 [00:00<01:26, 32.06it/s]
+Generating samples for metrics:   1%|          | 19/2793 [00:00<01:18, 35.32it/s]
+Generating samples for metrics:   1%|          | 24/2793 [00:00<01:14, 37.23it/s]
+Generating samples for metrics:   1%|          | 25/2793 [00:00<01:17, 35.63it/s]
+Error calculating quality metrics: Sizes of tensors must match except in dimension 0. Expected size 352 but got size 288 for tensor number 1 in the list.
+
+Computing advanced quality metrics (FID, KID, IS, MSSIM, PSNR)...
+
+  0%|          | 0/20 [00:00<?, ?it/s]
+  5%|▌         | 1/20 [00:00<00:02,  6.67it/s]
+ 20%|██        | 4/20 [00:00<00:01, 15.06it/s]
+ 30%|███       | 6/20 [00:00<00:00, 14.77it/s]
+ 40%|████      | 8/20 [00:00<00:00, 15.62it/s]
+ 55%|█████▌    | 11/20 [00:01<00:00,  9.47it/s]
+ 70%|███████   | 14/20 [00:01<00:00, 12.54it/s]
+ 80%|████████  | 16/20 [00:01<00:00, 13.86it/s]
+ 90%|█████████ | 18/20 [00:01<00:00, 14.38it/s]
+100%|██████████| 20/20 [00:01<00:00, 15.62it/s]
+100%|██████████| 20/20 [00:01<00:00, 13.67it/s]
+
+  0%|          | 0/20 [00:00<?, ?it/s]
+ 10%|█         | 2/20 [00:00<00:01, 16.04it/s]
+ 25%|██▌       | 5/20 [00:00<00:00, 18.01it/s]
+ 40%|████      | 8/20 [00:00<00:00, 20.80it/s]
+ 55%|█████▌    | 11/20 [00:00<00:00, 20.71it/s]
+ 70%|███████   | 14/20 [00:00<00:00, 20.48it/s]
+ 85%|████████▌ | 17/20 [00:00<00:00, 19.36it/s]
+ 95%|█████████▌| 19/20 [00:00<00:00, 19.30it/s]
+100%|██████████| 20/20 [00:01<00:00, 16.58it/s]
+Warning: subset_size is bigger than len(codes_g). [sub:200  code_g:80]
+  FID: 38.0292
+  KID: 0.7314
+  Inception Score (real): 1.4397
+  Inception Score (generated): 1.4271
+
+  0%|          | 0/20 [00:00<?, ?it/s]gen_img_len 320 != src_img_len 445
+
+  0%|          | 0/20 [00:00<?, ?it/s]
+  ⚠️ MSSIM/PSNR computation failed: Input images must have the same dimensions.
+Evaluated 80 generated samples across 20 batches.
+Models ready for inference!
+✓ Style-guided generation complete!
+✓ Random style generation complete!
+✓ Style interpolation complete!
+✓ Same-style multi-text generation complete!
+=== Custom Style Transfer Demo ===
+
+Reference image text: "w"
+Reference image size: torch.Size([1, 1, 64, 160])
+
+Generating 5 custom texts in the reference style...
+Extracted style vector: torch.Size([1, 32])
+Generated images: torch.Size([5, 1, 64, 736])
+
+✓ Custom style transfer complete!
+✓ Saved result to: inference_custom_style_transfer.png
+================================================================================
+HiGAN+ MODEL EVALUATION SUMMARY
+================================================================================
+
+📊 CONFIGURATION:
+  • Dataset: iam_word_org
+  • Epochs Available: 20
+  • Batch Size: 8
+  • Learning Rate: 0.0002
+  • Style Dimension: 32
+  • VAE Mode: True
+  • Checkpoint Source: B:\College\DL\handwriting_autocomplete_system\Higan+ from Scratch\server_files\epoch_20.pth
+  • Additional Training This Session: No
+
+🏗️ MODEL ARCHITECTURE:
+  • Generator Parameters: 3,935,937
+  • Discriminator Parameters: 2,366,145
+  • Style Encoder Parameters: 148,032
+  • Total Trainable Parameters: 6,450,114
+
+📈 MOST RECENT TRAINING LOGS:
+  • Last Epoch Logged: 20
+  • Generator Loss: 28.8893
+  • Discriminator Loss: 0.8098
+  • Adversarial Loss: 3.6940
+  • CTC Loss: 1.2096
+
+🎯 EVALUATION METRICS:
+  • Character Error Rate (CER): 2.96%
+  • Word Error Rate (WER): 10.00%
+  • Character Accuracy: 97.04%
+  • Word Accuracy: 90.00%
+  • Simple image metrics unavailable.
+  • FID: 38.0292
+  • KID: 0.7314
+  • Inception Score (Real): 1.4397
+  • Inception Score (Generated): 1.4271
+  • MSSIM/PSNR metrics unavailable.
+
+✅ GENERATED OUTPUTS:
+  • training_losses.png - Training loss curves
+  • inference_style_guided.png - Style-guided generation
+  • inference_random_style.png - Random style generation
+  • inference_interpolation.png - Style interpolation
+  • inference_same_style.png - Same style, different texts
+  • inference_custom_style_transfer.png - Reference style transfer
+
+🔬 MODEL CAPABILITIES:
+  ✓ Generate realistic handwritten text images
+  ✓ Control writing style through style vectors
+  ✓ Copy style from reference images
+  ✓ Generate arbitrary text content
+  ✓ Smooth style interpolation
+  ✓ Maintain text readability (OCR accuracy)
+
+================================================================================
+✨ Evaluation complete!
+================================================================================
+✓ Model saved to: models\higanplus_trained.pth
+  File size: 40.02 MB
+✓ Configuration saved to: models\training_config.json
+================================================================================
+HiGAN+ MODEL EVALUATION SUMMARY
+================================================================================
+
+📊 CONFIGURATION:
+  • Dataset: iam_word_org
+  • Epochs Available: 20
+  • Batch Size: 8
+  • Learning Rate: 0.0002
+  • Style Dimension: 32
+  • VAE Mode: True
+  • Checkpoint Source: models\higanplus_trained.pth
+  • Additional Training This Session: No
+
+🏗️ MODEL ARCHITECTURE:
+  • Generator Parameters: 3,935,937
+  • Discriminator Parameters: 2,366,145
+  • Style Encoder Parameters: 148,032
+  • Total Trainable Parameters: 6,450,114
+
+📈 MOST RECENT TRAINING LOGS:
+  • Last Epoch Logged: 20
+  • Generator Loss: 28.8893
+  • Discriminator Loss: 0.8098
+  • Adversarial Loss: 3.6940
+  • CTC Loss: 1.2096
+
+🎯 EVALUATION METRICS:
+  • Character Error Rate (CER): 2.96%
+  • Word Error Rate (WER): 10.00%
+  • Character Accuracy: 97.04%
+  • Word Accuracy: 90.00%
+  • Simple image metrics unavailable.
+  • FID: 38.0292
+  • KID: 0.7314
+  • Inception Score (Real): 1.4397
+  • Inception Score (Generated): 1.4271
+  • MSSIM/PSNR metrics unavailable.
+
+✅ GENERATED OUTPUTS:
+  • training_losses.png - Training loss curves
+  • inference_style_guided.png - Style-guided generation
+  • inference_random_style.png - Random style generation
+  • inference_interpolation.png - Style interpolation
+  • inference_same_style.png - Same style, different texts
+  • inference_custom_style_transfer.png - Reference style transfer
+
+🔬 MODEL CAPABILITIES:
+  ✓ Generate realistic handwritten text images
+  ✓ Control writing style through style vectors
+  ✓ Copy style from reference images
+  ✓ Generate arbitrary text content
+  ✓ Smooth style interpolation
+  ✓ Maintain text readability (OCR accuracy)
+
+================================================================================
+✨ Evaluation complete!
+================================================================================
