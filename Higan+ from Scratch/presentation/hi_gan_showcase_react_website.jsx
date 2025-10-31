@@ -230,19 +230,19 @@ export default function HiGANPlusShowcase() {
             <p className="mb-2">Key equations used in training:</p>
             <div className="prose max-w-none">
               <p>Hinge discriminator loss:</p>
-              <p className="bg-slate-50 p-3 rounded">\[ L_D = \mathbb{E}_{x\sim p_{r}}[\max(0, 1 - D(x))] + \mathbb{E}_{\hat{x}\sim p_{g}}[\max(0, 1 + D(\hat{x}))] \]</p>
+              <p className="bg-slate-50 p-3 rounded">{'\\[ L_D = \\mathbb{E}_{x\\sim p_{r}}[\\max(0, 1 - D(x))] + \\mathbb{E}_{\\hat{x}\\sim p_{g}}[\\max(0, 1 + D(\\hat{x}))] \\]'}</p>
 
               <p>Generator adversarial loss:</p>
-              <p className="bg-slate-50 p-3 rounded">\[ L_G^{adv} = - \mathbb{E}_{\hat{x}\sim p_g}[D(\hat{x})] \]</p>
+              <p className="bg-slate-50 p-3 rounded">{'\\[ L_G^{adv} = - \\mathbb{E}_{\\hat{x}\\sim p_g}[D(\\hat{x})] \\]'}</p>
 
               <p>CTC loss (schematic):</p>
-              <p className="bg-slate-50 p-3 rounded">\[ L_{CTC} = - \sum_{t} \log p(y_t | x) \quad \text{(computed via CTC on recognizer logits)} \]</p>
+              <p className="bg-slate-50 p-3 rounded">{'\\[ L_{CTC} = - \\sum_{t} \\log p(y_t | x) \\quad \\text{(computed via CTC on recognizer logits)} \\]'}</p>
 
-              <p>VAE KL term (if \(\text{vae\_mode} = true\)):</p>
-              <p className="bg-slate-50 p-3 rounded">\[ L_{KL} = 0.5 \cdot \mathrm{mean}(\mu^2 + \sigma^2 - \log(\sigma^2) - 1) \]</p>
+              <p>VAE KL term (if {'\\(\\text{vae\\_mode} = true\\)'}):</p>
+              <p className="bg-slate-50 p-3 rounded">{'\\[ L_{KL} = 0.5 \\cdot \\mathrm{mean}(\\mu^2 + \\sigma^2 - \\log(\\sigma^2) - 1) \\]'}</p>
 
               <p className="mt-4">Full generator objective (weights learned via adaptive GP balancing):</p>
-              <p className="bg-slate-50 p-3 rounded">\[ L_G = L_G^{adv} + gp_{ctc} L_{CTC} + gp_{wid} L_{WID} + gp_{recn} L_{recon} + \lambda_{ctx} L_{ctx} + \lambda_{kl} L_{KL} \]</p>
+              <p className="bg-slate-50 p-3 rounded">{'\\[ L_G = L_G^{adv} + gp_{ctc} L_{CTC} + gp_{wid} L_{WID} + gp_{recn} L_{recon} + \\lambda_{ctx} L_{ctx} + \\lambda_{kl} L_{KL} \\]'}</p>
             </div>
           </div>
         </motion.section>
