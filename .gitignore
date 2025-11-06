@@ -16,3 +16,8 @@ Higan+ from Scratch/server_files/epoch_20.pth
 /Higan+ from Scratch/presentation/node_modules
 /Higan+ from Scratch/presentation/node_modules
 /hdf5_train_ocr/data
+/word
+
+*.pkl
+*.h5
+segmented/

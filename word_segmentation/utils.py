@@ -11,8 +11,9 @@ SMALL_HEIGHT = 800
 
 def implt(img, cmp=None, t=''):
     """Show image using plt."""
-    cv2.namedWindow('', cv2.WINDOW_NORMAL)
-    cv2.imshow('', img)
+    window_name = t if t else 'Image'
+    cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
+    cv2.imshow(window_name, img)
     cv2.waitKey(0)
 
 

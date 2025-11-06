@@ -18,7 +18,7 @@ import tensorflow as tf
 from tensorflow import keras
 
 # Import our HTR model components
-from htr_cnn_lstm import (
+from htr.htr_cnn_lstm import (
     CharacterEncoder,
     build_crnn_model,
     decode_predictions,

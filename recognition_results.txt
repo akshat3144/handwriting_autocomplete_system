@@ -1,0 +1,91 @@
+================================================================================
+HANDWRITTEN SENTENCE RECOGNITION RESULTS
+================================================================================
+
+Image: test.jpg
+Total words detected: 67
+Total lines: 11
+
+Individual words:
+  Word  1: 'The'
+  Word  2: 'Sneplaagon'
+  Word  3: 'Bcx'
+  Word  4: 'soo'
+  Word  5: 'that'
+  Word  6: 'qualcowm'
+  Word  7: 'Announcced'
+  Word  8: 'Last'
+  Word  9: 'yar'
+  Word 10: 'yow'
+  Word 11: 'quite'
+  Word 12: 'a'
+  Word 13: 'few'
+  Word 14: 'takers-'
+  Word 15: 'Sarmoruing'
+  Word 16: 'lenoo'
+  Word 17: 'and'
+  Word 18: 'few'
+  Word 19: 'more'
+  Word 20: 'chinese'
+  Word 21: 'and'
+  Word 22: ','
+  Word 23: 'Fapanese'
+  Word 24: 'ocms'
+  Word 25: 'gat'
+  Word 26: 'onto'
+  Word 27: 'the'
+  Word 28: 'bandwagon'
+  Word 29: 'and'
+  Word 30: 'Launched'
+  Word 31: 'thigh'
+  Word 32: 'rend'
+  Word 33: 'thin'
+  Word 34: 'and'
+  Word 35: 'light'
+  Word 36: 'loptopes'
+  Word 37: 'poweseel'
+  Word 38: 'by'
+  Word 39: 'the'
+  Word 40: 'Snafpdaayon'
+  Word 41: 'Bcx'
+  Word 42: ':'
+  Word 43: 'Yet'
+  Word 44: ','
+  Word 45: 'none'
+  Word 46: 'I'
+  Word 47: 'tthem'
+  Word 48: 'managed'
+  Word 49: 'to'
+  Word 50: 'make'
+  Word 51: 'it'
+  Word 52: 'to'
+  Word 53: 'sndia'
+  Word 54: '.'
+  Word 55: 'And'
+  Word 56: 'we'
+  Word 57: 'arse'
+  Word 58: 'guessing'
+  Word 59: 'it'
+  Word 60: 'was'
+  Word 61: 'frinaerty'
+  Word 62: 'because'
+  Word 63: 'I'
+  Word 64: 'fraibitorg'
+  Word 65: ','
+  Word 66: 'frising'
+  Word 67: '.'
+
+Recognized sentence:
+  Line 1: The Sneplaagon Bcx soo that qualcowm
+  Line 2: Announcced Last yar yow quite a few takers-
+  Line 3: Sarmoruing lenoo and few more chinese and
+  Line 4: ,
+  Line 5: Fapanese ocms gat onto the bandwagon
+  Line 6: and Launched thigh rend thin and light
+  Line 7: loptopes poweseel by the Snafpdaayon Bcx :
+  Line 8: Yet , none I tthem managed to make
+  Line 9: it to sndia . And we arse guessing it
+  Line 10: was frinaerty because I fraibitorg , frising
+  Line 11: .
+
+Full text: The Sneplaagon Bcx soo that qualcowm Announcced Last yar yow quite a few takers- Sarmoruing lenoo and few more chinese and , Fapanese ocms gat onto the bandwagon and Launched thigh rend thin and light loptopes poweseel by the Snafpdaayon Bcx : Yet , none I tthem managed to make it to sndia . And we arse guessing it was frinaerty because I fraibitorg , frising .
