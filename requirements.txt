@@ -1,0 +1,50 @@
+# Consolidated requirements for the handwriting_autocomplete_system project
+# Generated for macOS arm64 (Apple Silicon): uses tensorflow-macos
+# Versions are mostly unpinned to avoid resolver conflicts across subprojects.
+
+# Core scientific stack
+numpy
+pandas
+matplotlib
+pillow
+scipy
+
+# Computer vision and data IO
+opencv-python
+h5py
+PyYAML
+tqdm
+munch
+Distance
+
+# ML frameworks
+torch
+torchvision
+# TensorFlow for Apple Silicon (CPU/GPU via Metal)
+tensorflow-macos
+# Optional GPU acceleration backend for TensorFlow on Apple Silicon (recommended)
+tensorflow-metal
+
+# Modeling utilities
+scikit-learn
+
+# Extras (from subproject requirements and common deps of matplotlib/tensorflow)
+absl-py
+contourpy
+cycler
+filelock
+fonttools
+fsspec
+grpcio
+Jinja2
+kiwisolver
+Markdown
+MarkupSafe
+mpmath
+networkx
+protobuf
+pyparsing
+sympy
+tensorboard
+tensorboard-data-server
+Werkzeug
