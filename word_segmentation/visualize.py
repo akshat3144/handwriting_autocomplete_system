@@ -7,7 +7,12 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
+import os
+from pathlib import Path
 from segmenter import WordSegmenter
+
+# Get the directory where this script is located
+SCRIPT_DIR = Path(__file__).parent
 
 
 def visualize_pipeline(image_path='test_image.png', output_path='pipeline_steps.png'):
@@ -18,6 +23,12 @@ def visualize_pipeline(image_path='test_image.png', output_path='pipeline_steps.
         image_path: Path to input image
         output_path: Path to save visualization
     """
+    # Convert to absolute path if relative
+    if not os.path.isabs(image_path):
+        image_path = str(SCRIPT_DIR / image_path)
+    if not os.path.isabs(output_path):
+        output_path = str(SCRIPT_DIR / output_path)
+    
     print(f"Processing: {image_path}")
     
     # Read image
@@ -109,7 +120,7 @@ def visualize_pipeline(image_path='test_image.png', output_path='pipeline_steps.
     plt.close()
     
     # Also save just the final result
-    final_output = 'output.png'
+    final_output = str(SCRIPT_DIR / 'output.png')
     cv2.imwrite(final_output, result['image_with_boxes'])
     print(f"✓ Saved final result: {final_output}")
     
