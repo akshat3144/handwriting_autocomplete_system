@@ -286,15 +286,15 @@ def complete_pipeline(image_path, num_predictions=5, visualize=False):
     # Initialize word segmenter
     print("\nInitializing word segmenter...")
     word_segmenter = WordSegmenter(
-        blur_kernel=(3, 3),
-        blur_sigma=1,
-        morph_kernel=(3, 3),
-        dilation_kernel=(1, 3),
-        min_width=15,
-        min_height=10,
+        blur_kernel=(9, 9),           # Maximum blur to merge letter edges
+        blur_sigma=4,                  # Very strong blur
+        morph_kernel=(9, 9),          # Very large closing operation
+        dilation_kernel=(7, 17),      # Extremely aggressive horizontal dilation
+        min_width=50,                  # Filter out anything smaller than typical word width
+        min_height=25,                 # Filter small heights
         max_width_ratio=0.9,
         max_height_ratio=0.5,
-        min_fill_ratio=0.1
+        min_fill_ratio=0.02           # Very low fill ratio for sparse handwriting
     )
     print("✓ Word segmenter ready")
     

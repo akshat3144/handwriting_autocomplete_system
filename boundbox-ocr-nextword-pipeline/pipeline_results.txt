@@ -3,14 +3,14 @@ COMPLETE PIPELINE RESULTS
 ================================================================================
 
 Image: test.jpg
-Words detected: 100
+Words detected: 61
 
 Recognized text:
-  in he Snaplaagon 8 ( " sou that qual cowm an nounceel Last yaw quite . a few sakers . year Sams and few more chi nese and ung , lenoo I afpanese oen gat onto the ban dwsayon 8 and Jaunched thigh . end thin . . and - light . lop tops foweseed by the Snafdaayo " 80 " : Yet none I them managed to make , it to I ni a . A nd we are guess i 5 it was for . mai by be case I of rakibi , torg prich . I .
+  The Snepdaagon 8ck sor that qualcowm announceed Last year saw quite a tew sakers- Sarmoungg lenoo and fw more chinese and Tafanese Ocms gat onto the bandwagon and Maunched tigh-end thin and light laptops foweseed by the Snapdagygon Bcx Yet none I them moneged to make it to jndia And we are gussing it was prinaesrty becaise I of rathibitorg frising
 
 Top 5 next word predictions:
-   1. ' .' (probability: 0.0912)
-   2. ' I' (probability: 0.0846)
-   3. ' a' (probability: 0.0591)
-   4. ' m' (probability: 0.0391)
-   5. ' n' (probability: 0.0386)
+   1. ' the' (probability: 0.1026)
+   2. ' it' (probability: 0.1025)
+   3. ' to' (probability: 0.0735)
+   4. ' and' (probability: 0.0683)
+   5. ' a' (probability: 0.0457)
