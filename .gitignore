@@ -18,6 +18,79 @@ Higan+ from Scratch/server_files/epoch_20.pth
 /hdf5_train_ocr/data
 /word
 
+# Python cache
 *.pkl
+__pycache__/
+*.pyc
+*.pyo
+
+# Model weights and checkpoints
 *.h5
+*.weights.h5
+*.pth
+*.pt
+*.ckpt
+*.ckpt.*
+*.caffemodel
+*.pb
+*.onnx
+*.tflite
+*.mlmodel
+
+# Large data files
+*.hdf5
+*.npy
+*.npz
+
+# TensorFlow/PyTorch checkpoints
+checkpoint
+*.index
+*.meta
+*.data-00000-of-00001
+
+# GPT-2 and language model files
+/gpt-2-124M_checkpoints/
+/gpt-2-train/logs/
+encoder.json
+vocab.bpe
+hparams.json
+
+# OCR weights directory
+/ocr_weights/
+/hdf5_train_ocr/*.h5
+/hdf5_train_ocr/*.weights.h5
+
+# HiGAN+ models
+/Higan+ from Scratch/models/*.pth
+/Higan+ from Scratch/checkpoints/
+
+# CycleGAN checkpoints
+/writer_cyclegan/checkpoints/
+/writer_cyclegan/results/
+
+# Output and results
 segmented/
+/recognition_results.txt
+/predictions_*.txt
+
+# Dataset directories
+/data/
+/dataset/
+/datasets/
+*.zip
+*.tar.gz
+*.tar
+
+# Jupyter notebook checkpoints
+.ipynb_checkpoints/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
