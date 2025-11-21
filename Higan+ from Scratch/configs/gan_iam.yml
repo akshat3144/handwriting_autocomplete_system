@@ -5,15 +5,14 @@ seed: 123456
 img_height: 64
 char_width: 32
 
-
 training:
   dset_split: 'trnval'
   epochs: 70
   lr_policy: 'linear'
   start_decay_epoch: 25
   n_epochs_decay: 46
-  batch_size: 8
-  eval_batch_size: 8
+  batch_size: 16
+  eval_batch_size: 16
   sample_nrow: 3
   # optimization:
   lr: 2.0e-4
@@ -35,7 +34,7 @@ training:
   num_critic_train: 4
   vae_mode: true
   lambda_kl: 0.0001
-  lambda_ctx: 2.0
+  lambda_ctx: 1.0
   lambda_gram: 2.0
   pretrained_w: './pretrained/wid_iam_new.pth'
   pretrained_r: './pretrained/ocr_iam_new.pth'

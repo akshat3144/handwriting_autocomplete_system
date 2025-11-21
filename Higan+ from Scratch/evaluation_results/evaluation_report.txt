@@ -2,7 +2,7 @@
 HiGAN+ MODEL EVALUATION REPORT
 ======================================================================
 
-Checkpoint: B:\College\DL\handwriting_autocomplete_system\Higan+ from Scratch\server_files\epoch_20.pth
+Checkpoint: B:\College\DL\handwriting_autocomplete_system\Higan+ from Scratch\server_files\best_e_20.pth
 Epoch: 20
 Total Iterations: 130560
 Device: cuda
