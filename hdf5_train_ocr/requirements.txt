@@ -1,0 +1,23 @@
+# Minimal requirements for the hdf5_train_ocr notebook-only workflow
+# Focused on CRNN/CTC HTR training and HDF5-based data loading.
+# Versions are intentionally unpinned for compatibility across environments.
+
+# Core scientific stack
+numpy
+pandas
+matplotlib
+
+# Computer vision and IO
+opencv-python
+h5py
+
+# ML utilities
+scikit-learn
+
+# TensorFlow
+# Use Apple Silicon optimized builds on macOS; fall back to generic TF elsewhere
+tensorflow-macos; platform_system == "Darwin"
+# Optional Metal acceleration for Apple Silicon GPUs
+tensorflow-metal; platform_system == "Darwin"
+# Generic TensorFlow for non-macOS platforms
+tensorflow; platform_system != "Darwin"

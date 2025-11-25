@@ -1,0 +1,16 @@
+================================================================================
+COMPLETE PIPELINE RESULTS
+================================================================================
+
+Image: test.jpg
+Words detected: 61
+
+Recognized text:
+  The Snepdaagon 8ck sor that qualcowm announceed Last year saw quite a tew sakers- Sarmoungg lenoo and fw more chinese and Tafanese Ocms gat onto the bandwagon and Maunched tigh-end thin and light laptops foweseed by the Snapdagygon Bcx Yet none I them moneged to make it to jndia And we are gussing it was prinaesrty becaise I of rathibitorg frising
+
+Top 5 next word predictions:
+   1. ' the' (probability: 0.1026)
+   2. ' it' (probability: 0.1025)
+   3. ' to' (probability: 0.0735)
+   4. ' and' (probability: 0.0683)
+   5. ' a' (probability: 0.0457)
