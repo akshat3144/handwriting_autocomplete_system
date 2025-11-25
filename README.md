@@ -8,8 +8,8 @@ A deep learning–based system for **predicting and auto-completing handwriting*
 
 The system operates in **three key phases**:
 
-| Phase                                   | Description                                         | Technology     |
-| --------------------------------------- | --------------------------------------------------- | -------------- |
+| Phase                             | Description                                         | Technology     |
+| --------------------------------- | --------------------------------------------------- | -------------- |
 | **Phase 1: OCR/HCR**              | Handwritten text recognition with word segmentation | CNN-LSTM + CTC |
 | **Phase 2: Next Word Prediction** | Language model for predicting next words            | GPT-2          |
 | **Phase 3: Style Transfer**       | Render text in user's handwriting style             | HiGAN+         |
@@ -26,15 +26,16 @@ handwriting_autocomplete_system/
 ├── README.md                           # This file
 ├── LICENSE                             # License information
 ├── requirements.txt                    # Python dependencies
-├── .gitignore                          # Git ignore rules
 │
 ├── phase1_ocr/                         # Phase 1: OCR & Word Segmentation
-│   ├── segmenter.py                    # Word segmentation module
-│   ├── visualize.py                    # Visualization utilities
 │   ├── sentence_recognizer.py          # Complete sentence OCR pipeline
-│   ├── __init__.py                     # Package init
 │   ├── README.md                       # Phase 1 documentation
-│   ├── requirements.txt                # Phase 1 specific dependencies
+│   │
+│   ├── segmentation/                   # Word segmentation module
+│   │   ├── __init__.py
+│   │   ├── segmenter.py               # Word segmentation logic
+│   │   ├── visualize.py               # Visualization utilities
+│   │   └── README.md                  # Segmentation documentation
 │   │
 │   ├── training/                       # OCR model training
 │   │   ├── htr_cnn_lstm.py            # CNN-LSTM model architecture
@@ -42,9 +43,12 @@ handwriting_autocomplete_system/
 │   │   └── htr_nb_kaggle.ipynb        # Training notebook (Kaggle)
 │   │
 │   ├── model_weights/                  # Trained model weights
-│   │   ├── htr_model_*.h5             # Trained OCR model
-│   │   ├── encoder_*.pkl              # Character encoder
-│   │   └── htr_nb.ipynb               # Model training notebook
+│   │   ├── htr_model_20251020_084444_base.h5
+│   │   └── htr_model_20251020_084444.weights.weights.h5
+│   │
+│   ├── outputs/                        # Recognition outputs
+│   │   ├── recognition_results.txt    # Text recognition results
+│   │   └── segmented/                 # Segmented word images
 │   │
 │   └── tests/                          # Test scripts
 │       ├── test_recognition.py         # Recognition tests
@@ -53,6 +57,7 @@ handwriting_autocomplete_system/
 ├── phase2_nextword_prediction/         # Phase 2: Next Word Prediction
 │   ├── inference.py                    # GPT-2 inference script
 │   ├── infer_pretrained.py            # Pretrained model inference
+│   ├── README.md                       # Phase 2 documentation
 │   │
 │   ├── src/                            # Core modules
 │   │   ├── model.py                   # GPT-2 model architecture
@@ -67,14 +72,16 @@ handwriting_autocomplete_system/
 │
 ├── phase3_style_transfer/              # Phase 3: Handwriting Style Transfer
 │   ├── README.md                       # HiGAN+ documentation
-│   ├── ARCH.md                        # Architecture details
-│   ├── TRAINING_ROADMAP.md            # Training guide
-│   ├── QUICK_START.md                 # Quick start guide
-│   ├── requirements.txt               # Dependencies
-│   │
 │   ├── code.ipynb                     # Main training notebook
 │   ├── inference.ipynb                # Inference notebook
 │   ├── run_generate.py                # Generation script
+│   ├── hdf5file.ipynb                 # HDF5 dataset utilities
+│   ├── datasetLink.txt                # Dataset links
+│   │
+│   ├── apply_improvements.py          # Apply model improvements
+│   ├── integrate_improvements.py      # Integration script
+│   ├── quick_improvements.py          # Quick improvement script
+│   ├── back_up_without_metrics.ipynb  # Backup notebook
 │   │
 │   ├── configs/                        # Configuration files
 │   │   ├── gan_iam.yml                # IAM dataset config
@@ -89,40 +96,69 @@ handwriting_autocomplete_system/
 │   │   └── path_config.py             # Path configuration
 │   │
 │   ├── models/                         # Trained models
-│   │   └── higanplus_trained.pth      # Trained HiGAN+ model
+│   │   ├── higanplus_trained.pth      # Trained HiGAN+ model
+│   │   └── training_config.json       # Training configuration
 │   │
 │   ├── inference/                      # Inference I/O
 │   │   ├── input/                     # Input images
 │   │   └── output/                    # Generated outputs
 │   │
+│   ├── evaluation_results/             # Evaluation metrics
+│   │   ├── evaluation_report.txt      # Evaluation report
+│   │   └── training_statistics.csv    # Training statistics
+│   │
+│   ├── output_files/                   # Training outputs
+│   │   ├── train_output.txt           # Training logs
+│   │   └── metrics.ipynb              # Metrics notebook
+│   │
+│   ├── server_files/                   # Server-related files
+│   │   ├── code.ipynb                 # Server code notebook
+│   │   └── train_output.txt           # Server training logs
+│   │
 │   └── presentation/                   # Demo presentation
 │       ├── index.html
 │       ├── standalone.html
-│       └── package.json
+│       ├── main.jsx
+│       ├── hi_gan_showcase_react_website.jsx
+│       ├── index.css
+│       ├── package.json
+│       ├── vite.config.js
+│       ├── tailwind.config.js
+│       └── postcss.config.js
 │
 ├── pipeline/                           # Integrated Pipeline
-│   ├── complete_pipeline.py           # Full OCR → Prediction pipeline
+│   ├── complete_pipeline.py           # Full OCR → Prediction → Style Transfer
 │   ├── README.md                      # Pipeline documentation
-│   └── integrated_pipeline_legacy.ipynb # Legacy notebook
+│   ├── pipeline_results.txt           # Pipeline execution results
+│   ├── integrated_pipeline_legacy.ipynb # Legacy notebook
+│   └── pipeline_transfer_learning.ipynb # Transfer learning pipeline
 │
 ├── experimental/                       # Experimental Approaches
+│   ├── hdf5_ocr/                      # HDF5-based OCR experiments
+│   │   ├── htr_nb.ipynb              # Training notebook
+│   │   ├── htr_model_20251106_201701_base.h5
+│   │   ├── htr_model_20251106_201701.weights.weights.h5
+│   │   └── predictions_20251106_201701.txt
+│   │
+│   ├── scratch_code/                  # Experimental scratch code
+│   │   ├── gan.ipynb                 # GAN experiments
+│   │   ├── gan_ST.ipynb              # Style transfer experiments
+│   │   ├── README.md                 # Research notes
+│   │   └── ST.MD                     # Style transfer documentation
+│   │
 │   └── writer_cyclegan/               # CycleGAN for style transfer
 │       ├── CycleGAN.ipynb            # CycleGAN training
 │       ├── pix2pix.ipynb             # Pix2Pix experiments
+│       ├── iam_dataset_preparation.ipynb # Dataset preparation
 │       ├── train.py                  # Training script
 │       ├── test.py                   # Testing script
 │       ├── environment.yml           # Conda environment
+│       ├── README.md                 # CycleGAN documentation
 │       ├── data/                     # Dataset modules
 │       ├── models/                   # Model architectures
 │       ├── options/                  # Configuration options
+│       ├── scripts/                  # Utility scripts
 │       └── util/                     # Utilities
-│
-├── research_notebooks/                 # Research & Development
-│   ├── pipeline_transfer_learning.ipynb  # Transfer learning experiments
-│   ├── gan.ipynb                      # GAN experiments
-│   ├── gan_ST.ipynb                   # Style transfer experiments
-│   ├── README.md                      # Research notes
-│   └── ST.MD                          # Style transfer documentation
 │
 └── image/                              # Documentation images
     └── README/                        # README images
@@ -205,8 +241,8 @@ python phase3_style_transfer/run_generate.py --text "your text" --style_image sa
 
 The project uses the **IAM Handwriting Dataset** for training and evaluation.
 
-| Dataset                       | Link                                                                                 |
-| ----------------------------- | ------------------------------------------------------------------------------------ |
+| Dataset                       | Link                                                                                    |
+| ----------------------------- | --------------------------------------------------------------------------------------- |
 | IAM Handwritten Forms Dataset | [Kaggle](https://www.kaggle.com/datasets/naderabdalghani/iam-handwritten-forms-dataset) |
 | IAM Handwriting Word Database | [Kaggle](https://www.kaggle.com/datasets/nibinv23/iam-handwriting-word-database)        |
 
