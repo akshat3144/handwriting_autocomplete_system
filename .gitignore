@@ -74,11 +74,9 @@ iam_words/
 word-hwr/
 
 # ===== Phase 1: OCR =====
-/phase1_ocr/model_weights/*.h5
-/phase1_ocr/model_weights/*.weights.h5
+/phase1_ocr/model_weights/
 /phase1_ocr/data/
-/phase1_ocr/segmented/
-/phase1_ocr/predictions_*.txt
+/phase1_ocr/outputs/segmented/
 
 # ===== Phase 2: Next Word Prediction =====
 /phase2_nextword_prediction/checkpoints/
@@ -114,7 +112,7 @@ hparams.json
 # ===== Output Files =====
 /recognition_results.txt
 **/predictions_*.txt
-segmented/
+# segmented/
 output/
 results/
 

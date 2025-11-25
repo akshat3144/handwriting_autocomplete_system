@@ -24,9 +24,9 @@ sys.path.insert(0, current_dir)
 
 # Import word segmentation functions - use local segmenter module
 try:
-    from phase1_ocr.segmentation.segmenter import WordSegmenter, segment_words
+    from segmentation.segmenter import WordSegmenter, segment_words
 except ImportError:
-    print("Warning: Could not import segmenter module. Make sure segmenter.py exists in the same directory.")
+    print("Warning: Could not import segmenter module. Make sure segmenter.py exists in the segmentation directory.")
 
 
 # ============================================================================
@@ -34,15 +34,16 @@ except ImportError:
 # ============================================================================
 
 # Model paths (update these paths according to your saved model)
-MODEL_PATH = os.path.join(current_dir, 'model_weights', 'htr_model_20251106_201701_base.h5')  # Base model for prediction
-ENCODER_PATH = os.path.join(current_dir, 'model_weights', 'encoder_20251106_201701.pkl')  # Character encoder
+MODEL_PATH = os.path.join(current_dir, 'model_weights', 'htr_model_20251020_084444_base.h5')  # Base model for prediction
+ENCODER_PATH = os.path.join(current_dir, 'model_weights', 'encoder_20251020_084444.pkl')  # Character encoder
 
 # Image path (can be overridden by command line argument)
 IMAGE_PATH = 'test_sentence.jpg'  # Path to sentence image
 
 # Output settings
 SAVE_SEGMENTED_WORDS = True  # Save individual word images
-OUTPUT_DIR = 'segmented'  # Directory to save segmented words
+OUTPUTS_DIR = os.path.join(current_dir, 'outputs')  # Main outputs directory
+OUTPUT_DIR = os.path.join(OUTPUTS_DIR, 'segmented')  # Directory to save segmented words
 
 
 # ============================================================================
@@ -358,8 +359,10 @@ def segment_sentence(image_path, visualize=False):
     
     # Visualize if requested
     if visualize:
-        cv2.imwrite('segmented_visualization.jpg', result['image_with_boxes'])
-        print("✓ Visualization saved to 'segmented_visualization.jpg'")
+        os.makedirs(OUTPUTS_DIR, exist_ok=True)
+        vis_path = os.path.join(OUTPUTS_DIR, 'segmented_visualization.jpg')
+        cv2.imwrite(vis_path, result['image_with_boxes'])
+        print(f"✓ Visualization saved to '{vis_path}'")
     
     return word_images, sorted_lines
 
@@ -541,7 +544,8 @@ def main(image_path=None, visualize=True, save_words=True):
     print(f"\nFull text: {full_sentence}")
     
     # Save results to file
-    output_file = 'recognition_results.txt'
+    os.makedirs(OUTPUTS_DIR, exist_ok=True)
+    output_file = os.path.join(OUTPUTS_DIR, 'recognition_results.txt')
     with open(output_file, 'w', encoding='utf-8') as f:
         f.write("="*80 + "\n")
         f.write("HANDWRITTEN SENTENCE RECOGNITION RESULTS\n")

@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import os
 from pathlib import Path
-from phase1_ocr.segmentation.segmenter import WordSegmenter
+from .segmenter import WordSegmenter
 
 # Get the directory where this script is located
 SCRIPT_DIR = Path(__file__).parent

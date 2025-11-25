@@ -17,20 +17,31 @@ from datetime import datetime
 import tensorflow as tf
 from tensorflow import keras
 
-# Add current directory to path
+# Add current directory to path for script execution
 script_dir = os.path.dirname(__file__)
 sys.path.insert(0, script_dir)
 
-# Import our HTR model components
-from htr_cnn_lstm import (
-    CharacterEncoder,
-    build_crnn_model,
-    decode_predictions,
-    plot_training_history,
-    visualize_predictions,
-    jaro_winkler_similarity,
-    preprocess_image
-)
+# Import our HTR model components (handle both module and script execution)
+try:
+    from .htr_cnn_lstm import (
+        CharacterEncoder,
+        build_crnn_model,
+        decode_predictions,
+        plot_training_history,
+        visualize_predictions,
+        jaro_winkler_similarity,
+        preprocess_image
+    )
+except ImportError:
+    from htr_cnn_lstm import (
+        CharacterEncoder,
+        build_crnn_model,
+        decode_predictions,
+        plot_training_history,
+        visualize_predictions,
+        jaro_winkler_similarity,
+        preprocess_image
+    )
 
 # ============================================================================
 # 1. IAM DATASET CONFIGURATION
@@ -728,11 +739,14 @@ def main():
     IMG_HEIGHT = 32  # Image height (fixed, as per paper)
     IMG_WIDTH = 128  # Image width (fixed, as per paper)
     
-    # Output paths
+    # Output paths - save to model_weights folder in phase1_ocr
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    MODEL_SAVE_PATH = f'htr_model_{timestamp}.weights.h5'  # CTC model uses .weights.h5
-    ENCODER_SAVE_PATH = f'encoder_{timestamp}.pkl'
-    HISTORY_SAVE_PATH = f'history_{timestamp}.pkl'
+    model_weights_dir = os.path.join(os.path.dirname(script_dir), 'model_weights')
+    os.makedirs(model_weights_dir, exist_ok=True)
+    
+    MODEL_SAVE_PATH = os.path.join(model_weights_dir, f'htr_model_{timestamp}.weights.h5')  # CTC model uses .weights.h5
+    ENCODER_SAVE_PATH = os.path.join(model_weights_dir, f'encoder_{timestamp}.pkl')
+    HISTORY_SAVE_PATH = os.path.join(model_weights_dir, f'history_{timestamp}.pkl')
     
     # ========================================
     # STEP 1: LOAD DATASET

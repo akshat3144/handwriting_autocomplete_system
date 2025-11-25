@@ -15,9 +15,9 @@ sys.path.insert(0, parent_dir)
 print("Checking required files...")
 
 required_files = {
-    'Model': os.path.join(parent_dir, 'model_weights', 'htr_model_20251106_201701_base.h5'),
-    'Encoder': os.path.join(parent_dir, 'model_weights', 'encoder_20251106_201701.pkl'),
-    'Segmentation code': os.path.join(parent_dir, 'segmenter.py')
+    'Model': os.path.join(parent_dir, 'model_weights', 'htr_model_20251020_084444_base.h5'),
+    'Encoder': os.path.join(parent_dir, 'model_weights', 'encoder_20251020_084444.pkl'),
+    'Segmentation code': os.path.join(parent_dir, 'segmentation', 'segmenter.py')
 }
 
 missing_files = []
@@ -32,9 +32,9 @@ if missing_files:
     print("\n⚠️  Missing files detected!")
     print("Please ensure all required files are in the correct location.")
     print("\nExpected structure in phase1_ocr/:")
-    print("  - model_weights/htr_model_20251106_201701_base.h5")
-    print("  - model_weights/encoder_20251106_201701.pkl")
-    print("  - segmenter.py")
+    print("  - model_weights/htr_model_20251020_084444_base.h5")
+    print("  - model_weights/encoder_20251020_084444.pkl")
+    print("  - segmentation/segmenter.py")
     sys.exit(1)
 
 print("\n" + "="*80)

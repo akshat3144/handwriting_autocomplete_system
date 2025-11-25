@@ -1,0 +1,83 @@
+================================================================================
+HANDWRITTEN SENTENCE RECOGNITION RESULTS
+================================================================================
+
+Image: test.jpg
+Total words detected: 61
+Total lines: 9
+
+Individual words:
+  Word  1: 'The'
+  Word  2: 'Snepdaagon'
+  Word  3: '8ck'
+  Word  4: 'sor'
+  Word  5: 'that'
+  Word  6: 'qualcowm'
+  Word  7: 'announceed'
+  Word  8: 'Last'
+  Word  9: 'year'
+  Word 10: 'saw'
+  Word 11: 'quite'
+  Word 12: 'a'
+  Word 13: 'tew'
+  Word 14: 'sakers-'
+  Word 15: 'Sarmoungg'
+  Word 16: 'lenoo'
+  Word 17: 'and'
+  Word 18: 'fw'
+  Word 19: 'more'
+  Word 20: 'chinese'
+  Word 21: 'and'
+  Word 22: 'Tafanese'
+  Word 23: 'Ocms'
+  Word 24: 'gat'
+  Word 25: 'onto'
+  Word 26: 'the'
+  Word 27: 'bandwagon'
+  Word 28: 'and'
+  Word 29: 'Maunched'
+  Word 30: 'tigh-end'
+  Word 31: 'thin'
+  Word 32: 'and'
+  Word 33: 'light'
+  Word 34: 'laptops'
+  Word 35: 'foweseed'
+  Word 36: 'by'
+  Word 37: 'the'
+  Word 38: 'Snapdagygon'
+  Word 39: 'Bcx'
+  Word 40: 'Yet'
+  Word 41: 'none'
+  Word 42: 'I'
+  Word 43: 'them'
+  Word 44: 'moneged'
+  Word 45: 'to'
+  Word 46: 'make'
+  Word 47: 'it'
+  Word 48: 'to'
+  Word 49: 'jndia'
+  Word 50: 'And'
+  Word 51: 'we'
+  Word 52: 'are'
+  Word 53: 'gussing'
+  Word 54: 'it'
+  Word 55: 'was'
+  Word 56: 'prinaesrty'
+  Word 57: 'becaise'
+  Word 58: 'I'
+  Word 59: 'of'
+  Word 60: 'rathibitorg'
+  Word 61: 'frising'
+
+Recognized sentence:
+  Line 1: The Snepdaagon 8ck sor that qualcowm
+  Line 2: announceed Last year saw quite a tew sakers-
+  Line 3: Sarmoungg lenoo and fw more chinese and
+  Line 4: Tafanese Ocms gat onto the bandwagon
+  Line 5: and Maunched tigh-end thin and light
+  Line 6: laptops foweseed by the Snapdagygon Bcx
+  Line 7: Yet none I them moneged to make
+  Line 8: it to jndia And we are gussing it
+  Line 9: was prinaesrty becaise I of rathibitorg frising
+
+Full text: The Snepdaagon 8ck sor that qualcowm announceed Last year saw quite a tew sakers- Sarmoungg lenoo and fw more chinese and Tafanese Ocms gat onto the bandwagon and Maunched tigh-end thin and light laptops foweseed by the Snapdagygon Bcx Yet none I them moneged to make it to jndia And we are gussing it was prinaesrty becaise I of rathibitorg frising
