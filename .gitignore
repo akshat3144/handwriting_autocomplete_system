@@ -80,6 +80,7 @@ word-hwr/
 
 # ===== Phase 2: Next Word Prediction =====
 /phase2_nextword_prediction/checkpoints/
+/phase2_nextword_prediction/data/
 /phase2_nextword_prediction/logs/
 /phase2_nextword_prediction/model_weights/
 encoder.json
@@ -100,12 +101,12 @@ hparams.json
 /phase3_style_transfer/presentation/.parcel-cache/
 
 # ===== Pipeline =====
-/pipeline/results/
-/pipeline/output/
+# /pipeline/results/
+# /pipeline/output/
 
 # ===== Experimental (CycleGAN) =====
 /experimental/writer_cyclegan/checkpoints/
-/experimental/writer_cyclegan/results/
+# /experimental/writer_cyclegan/results/
 /experimental/writer_cyclegan/datasets/
 /experimental/writer_cyclegan/debug*/
 
