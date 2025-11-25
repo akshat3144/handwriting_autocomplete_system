@@ -1,53 +1,55 @@
 # Consolidated requirements for the handwriting_autocomplete_system project
-# Generated for macOS arm64 (Apple Silicon): uses tensorflow-macos
-# Versions are mostly unpinned to avoid resolver conflicts across subprojects.
+# All dependencies from phase1_ocr, phase2_nextword_prediction, phase3_style_transfer, and experimental modules
 
 # Core scientific stack
-numpy
+numpy>=1.19.2
 pandas
-matplotlib
-pillow
+matplotlib>=3.10.0
+pillow>=8.0.0
 scipy
 
 # Computer vision and data IO
-opencv-python
-h5py
-PyYAML
-tqdm
-munch
-Distance
+opencv-python>=3.4.10
+h5py>=3.15.0
+PyYAML>=6.0.0
+tqdm>=4.67.0
+munch>=4.0.0
+Distance>=0.1.3
 
-# ML frameworks
+# Deep learning frameworks
 torch
 torchvision
-# TensorFlow for Apple Silicon (CPU/GPU via Metal)
-tensorflow-macos
-# Optional GPU acceleration backend for TensorFlow on Apple Silicon (recommended)
-tensorflow-metal
+tiktoken
+
+# TensorFlow - conditional for different platforms
+# For macOS (Apple Silicon) - use tensorflow-macos with Metal acceleration
+tensorflow-macos; platform_system == "Darwin"
+tensorflow-metal; platform_system == "Darwin"
+# For other platforms - use standard TensorFlow
+tensorflow>=2.0.0; platform_system != "Darwin"
 
 # Modeling utilities
 scikit-learn
 
-# Extras (from subproject requirements and common deps of matplotlib/tensorflow)
-absl-py
-contourpy
-cycler
-filelock
-fonttools
-fsspec
-grpcio
-Jinja2
-kiwisolver
-Markdown
-MarkupSafe
-mpmath
-networkx
-protobuf
-pyparsing
-sympy
-tensorboard
-tensorboard-data-server
-Werkzeug
-numpy==1.19.2
-opencv-python==3.4.10.35
-Pillow==8.0.0
+# TensorBoard and related
+tensorboard>=2.20.0
+tensorboard-data-server>=0.7.0
+
+# Additional dependencies
+absl-py>=2.3.0
+contourpy>=1.3.0
+cycler>=0.12.0
+filelock>=3.13.0
+fonttools>=4.60.0
+fsspec>=2024.6.0
+grpcio>=1.75.0
+Jinja2>=3.1.0
+kiwisolver>=1.4.0
+Markdown>=3.9
+MarkupSafe>=2.1.0
+mpmath>=1.3.0
+networkx>=3.3
+protobuf>=6.32.0
+pyparsing>=3.2.0
+sympy>=1.13.0
+Werkzeug>=3.1.0
