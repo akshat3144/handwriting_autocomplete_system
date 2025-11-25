@@ -111,11 +111,11 @@ hparams.json
 /experimental/writer_cyclegan/debug*/
 
 # ===== Output Files =====
-/recognition_results.txt
-**/predictions_*.txt
+# /recognition_results.txt
+# **/predictions_*.txt
 # segmented/
-output/
-results/
+# output/
+# results/
 
 # ===== Node.js =====
 node_modules/
