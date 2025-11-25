@@ -24,7 +24,7 @@ sys.path.insert(0, current_dir)
 
 # Import word segmentation functions - use local segmenter module
 try:
-    from segmenter import WordSegmenter, segment_words
+    from phase1_ocr.segmentation.segmenter import WordSegmenter, segment_words
 except ImportError:
     print("Warning: Could not import segmenter module. Make sure segmenter.py exists in the same directory.")
 
