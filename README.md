@@ -1,6 +1,6 @@
 # ✍️ Handwriting Autocomplete System
 
-A deep learning–based system for **predicting and auto-completing handwriting** in real time. The system captures handwritten text images, recognizes the text via OCR, predicts the next word using a language model, and (optionally) renders it in the user's handwriting style.
+A deep learning–based system for **predicting and auto-completing handwriting** in real time. The system captures handwritten text images, recognizes the text via OCR, predicts the next word using a language model, and renders it in the user's handwriting style.
 
 ---
 
@@ -8,8 +8,8 @@ A deep learning–based system for **predicting and auto-completing handwriting*
 
 The system operates in **three key phases**:
 
-| Phase                             | Description                                         | Technology     |
-| --------------------------------- | --------------------------------------------------- | -------------- |
+| Phase                                   | Description                                         | Technology     |
+| --------------------------------------- | --------------------------------------------------- | -------------- |
 | **Phase 1: OCR/HCR**              | Handwritten text recognition with word segmentation | CNN-LSTM + CTC |
 | **Phase 2: Next Word Prediction** | Language model for predicting next words            | GPT-2          |
 | **Phase 3: Style Transfer**       | Render text in user's handwriting style             | HiGAN+         |
@@ -205,8 +205,8 @@ python phase3_style_transfer/run_generate.py --text "your text" --style_image sa
 
 The project uses the **IAM Handwriting Dataset** for training and evaluation.
 
-| Dataset                       | Link                                                                                    |
-| ----------------------------- | --------------------------------------------------------------------------------------- |
+| Dataset                       | Link                                                                                 |
+| ----------------------------- | ------------------------------------------------------------------------------------ |
 | IAM Handwritten Forms Dataset | [Kaggle](https://www.kaggle.com/datasets/naderabdalghani/iam-handwritten-forms-dataset) |
 | IAM Handwriting Word Database | [Kaggle](https://www.kaggle.com/datasets/nibinv23/iam-handwriting-word-database)        |
 
