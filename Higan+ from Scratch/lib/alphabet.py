@@ -97,7 +97,7 @@ class strLabelConverter(object):
             length = torch.IntTensor([nonzero_count(t)])
 
         if length.numel() == 1:
-            length = length[0]
+            length = length.item()
             assert nonzero_count(t) == length, "{} text with length: {} does not match declared length: {}".\
                                                 format(t, nonzero_count(t), length)
             if raw:
