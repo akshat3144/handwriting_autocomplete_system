@@ -190,16 +190,16 @@ Images are preprocessed before recognition:
 def preprocess_image(image):
     # 1. Convert to grayscale
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-  
+
     # 2. Binarization (Otsu's method)
     _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-  
+
     # 3. Resize with aspect ratio preservation
     resized = resize_and_pad(binary, target_height=32, target_width=128)
-  
+
     # 4. Normalize to [0, 1]
     normalized = resized.astype(np.float32) / 255.0
-  
+
     return normalized
 ```
 
@@ -243,8 +243,8 @@ python train_htr_iam.py
 
 **Training Configuration:**
 
-| Parameter         | Default | Description                     |
-| ----------------- | ------- | ------------------------------- |
+| Parameter       | Default | Description                     |
+| --------------- | ------- | ------------------------------- |
 | `BATCH_SIZE`    | 32      | Training batch size             |
 | `EPOCHS`        | 50      | Maximum training epochs         |
 | `IMG_HEIGHT`    | 32      | Input image height              |
@@ -275,8 +275,8 @@ model_weights/
 
 The model is evaluated using:
 
-| Metric                            | Description                                                    |
-| --------------------------------- | -------------------------------------------------------------- |
+| Metric                      | Description                                                    |
+| --------------------------- | -------------------------------------------------------------- |
 | **CER**                     | Character Error Rate - Levenshtein distance at character level |
 | **WER**                     | Word Error Rate - Levenshtein distance at word level           |
 | **Jaro-Winkler Similarity** | String similarity score (0-1)                                  |
@@ -368,13 +368,13 @@ class WordSegmenter:
                  max_height_ratio=0.5,    # Max word height as ratio of image
                  min_fill_ratio=0.1):     # Minimum pixel fill ratio
         ...
-  
+
     def segment(self, image) -> dict:
         """Returns dict with 'boxes', 'word_images', 'sorted_lines', 'num_words'"""
-  
+
     def segment_from_path(self, image_path) -> dict:
         """Same as segment(), but reads image from file path"""
-  
+
     def save_word_images(self, result, output_dir):
         """Saves individual word images to directory"""
 ```
@@ -385,12 +385,12 @@ class WordSegmenter:
 def main(image_path=None, visualize=True, save_words=True) -> str:
     """
     Main function to segment and recognize handwritten sentence.
-  
+
     Args:
         image_path: Path to sentence image
         visualize: Create segmentation visualization
         save_words: Save individual word images
-  
+
     Returns:
         Recognized sentence as string
     """
