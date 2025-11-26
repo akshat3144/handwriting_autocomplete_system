@@ -1,18 +1,160 @@
-/GAN_SCRATCH/data
-/GAN_SCRATCH/word-hwr
-/GAN_SCRATCH/iam_words
-/SCRATCH_Code/data
-/SCRATCH_Code/iam_words
-/Higan+ from Scratch/data
-/Higan+ from Scratch/inference_results
-/Higan+ from Scratch/lib/__pycache__
-/Higan+ from Scratch/metric
-/Higan+ from Scratch/networks
-/Higan+ from Scratch/pretrained
-Higan+ from Scratch/server_files/epoch_20.pth
-/Higan+ from Scratch/presentation/node_modules
-/Higan+ from Scratch/presentation/node_modules
-/Higan+ from Scratch/presentation/node_modules
-/Higan+ from Scratch/presentation/node_modules
-/Higan+ from Scratch/presentation/node_modules
-Higan+ from Scratch/server_files/epoch_70.pth
+# ==================================
+# Handwriting Autocomplete Pipeline
+# ==================================
+
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+*.pkl
+
+# ===== Virtual Environments =====
+venv/
+ENV/
+env/
+.venv/
+.conda/
+
+# ===== Jupyter Notebooks =====
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/
+**/.ipynb_checkpoints/
+
+# ===== Model Weights & Checkpoints =====
+# TensorFlow/Keras
+*.h5
+*.weights.h5
+*.pb
+*.tflite
+
+# PyTorch
+*.pth
+*.pt
+*.ckpt
+*.ckpt.*
+checkpoint
+*.index
+*.meta
+*.data-00000-of-00001
+
+# Other frameworks
+*.caffemodel
+*.onnx
+*.mlmodel
+
+# ===== Large Data Files =====
+*.hdf5
+*.npy
+*.npz
+*.tar
+*.tar.gz
+*.zip
+
+# ===== Dataset Directories =====
+data/
+dataset/
+datasets/
+iam_words/
+word-hwr/
+
+# ===== Phase 1: OCR =====
+/phase1_ocr/model_weights/
+/phase1_ocr/data/
+/phase1_ocr/outputs/segmented/
+
+# ===== Phase 2: Next Word Prediction =====
+/phase2_nextword_prediction/checkpoints/
+/phase2_nextword_prediction/data/
+/phase2_nextword_prediction/logs/
+/phase2_nextword_prediction/model_weights/
+encoder.json
+vocab.bpe
+hparams.json
+
+# ===== Phase 3: Style Transfer =====
+/phase3_style_transfer/data/
+/phase3_style_transfer/models/*.pth
+/phase3_style_transfer/checkpoints/
+/phase3_style_transfer/inference_results/
+/phase3_style_transfer/metric/
+/phase3_style_transfer/networks/
+/phase3_style_transfer/pretrained/
+/phase3_style_transfer/lib/__pycache__/
+/phase3_style_transfer/presentation/node_modules/
+/phase3_style_transfer/presentation/dist/
+/phase3_style_transfer/presentation/.parcel-cache/
+
+# ===== Pipeline =====
+# /pipeline/results/
+# /pipeline/output/
+
+# ===== Experimental (CycleGAN) =====
+/experimental/writer_cyclegan/checkpoints/
+# /experimental/writer_cyclegan/results/
+/experimental/writer_cyclegan/data/
+/experimental/writer_cyclegan/debug*/
+
+# ===== Output Files =====
+# /recognition_results.txt
+# **/predictions_*.txt
+# segmented/
+# output/
+# results/
+
+# ===== Node.js =====
+node_modules/
+**/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm/
+.yarn/
+
+# ===== IDE & Editors =====
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.sublime-workspace
+*.sublime-project
+
+# ===== OS Generated Files =====
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ===== Weights & Biases =====
+wandb/
+**/wandb/
+
+# ===== Logs =====
+logs/
+*.log
+
+# ===== Temporary Files =====
+*.tmp
+*.temp
+*.bak
+*.backup

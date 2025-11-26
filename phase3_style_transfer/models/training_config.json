@@ -1,0 +1,9 @@
+{
+  "dataset": "iam_word_org",
+  "epochs": 20,
+  "batch_size": 8,
+  "lr": 0.0002,
+  "style_dim": 32,
+  "final_cer": 0.02955082742316785,
+  "final_wer": 0.1
+}
