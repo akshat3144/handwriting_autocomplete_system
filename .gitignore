@@ -107,7 +107,7 @@ hparams.json
 # ===== Experimental (CycleGAN) =====
 /experimental/writer_cyclegan/checkpoints/
 # /experimental/writer_cyclegan/results/
-/experimental/writer_cyclegan/datasets/
+/experimental/writer_cyclegan/data/
 /experimental/writer_cyclegan/debug*/
 
 # ===== Output Files =====
