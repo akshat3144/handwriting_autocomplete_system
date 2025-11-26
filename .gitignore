@@ -1,46 +1,160 @@
-.DS_Store
-debug*
-datasets/
-checkpoints/
-results/
-build/
-dist/
-*.png
-torch.egg-info/
-*/**/__pycache__
-torch/version.py
-torch/csrc/generic/TensorMethods.cpp
-torch/lib/*.so*
-torch/lib/*.dylib*
-torch/lib/*.h
-torch/lib/build
-torch/lib/tmp_install
-torch/lib/include
-torch/lib/torch_shm_manager
-torch/csrc/cudnn/cuDNN.cpp
-torch/csrc/nn/THNN.cwrap
-torch/csrc/nn/THNN.cpp
-torch/csrc/nn/THCUNN.cwrap
-torch/csrc/nn/THCUNN.cpp
-torch/csrc/nn/THNN_generic.cwrap
-torch/csrc/nn/THNN_generic.cpp
-torch/csrc/nn/THNN_generic.h
-docs/src/**/*
-test/data/legacy_modules.t7
-test/data/gpu_tensors.pt
-test/htmlcov
-test/.coverage
-*/*.pyc
-*/**/*.pyc
-*/**/**/*.pyc
-*/**/**/**/*.pyc
-*/**/**/**/**/*.pyc
-*/*.so*
-*/**/*.so*
-*/**/*.dylib*
-test/data/legacy_serialized.pt
-*~
-.idea
+# ==================================
+# Handwriting Autocomplete Pipeline
+# ==================================
 
-#Ignore Wandb
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+*.pkl
+
+# ===== Virtual Environments =====
+venv/
+ENV/
+env/
+.venv/
+.conda/
+
+# ===== Jupyter Notebooks =====
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/
+**/.ipynb_checkpoints/
+
+# ===== Model Weights & Checkpoints =====
+# TensorFlow/Keras
+*.h5
+*.weights.h5
+*.pb
+*.tflite
+
+# PyTorch
+*.pth
+*.pt
+*.ckpt
+*.ckpt.*
+checkpoint
+*.index
+*.meta
+*.data-00000-of-00001
+
+# Other frameworks
+*.caffemodel
+*.onnx
+*.mlmodel
+
+# ===== Large Data Files =====
+*.hdf5
+*.npy
+*.npz
+*.tar
+*.tar.gz
+*.zip
+
+# ===== Dataset Directories =====
+data/
+dataset/
+datasets/
+iam_words/
+word-hwr/
+
+# ===== Phase 1: OCR =====
+/phase1_ocr/model_weights/
+/phase1_ocr/data/
+/phase1_ocr/outputs/segmented/
+
+# ===== Phase 2: Next Word Prediction =====
+/phase2_nextword_prediction/checkpoints/
+/phase2_nextword_prediction/data/
+/phase2_nextword_prediction/logs/
+/phase2_nextword_prediction/model_weights/
+encoder.json
+vocab.bpe
+hparams.json
+
+# ===== Phase 3: Style Transfer =====
+/phase3_style_transfer/data/
+/phase3_style_transfer/models/*.pth
+/phase3_style_transfer/checkpoints/
+/phase3_style_transfer/inference_results/
+/phase3_style_transfer/metric/
+/phase3_style_transfer/networks/
+/phase3_style_transfer/pretrained/
+/phase3_style_transfer/lib/__pycache__/
+/phase3_style_transfer/presentation/node_modules/
+/phase3_style_transfer/presentation/dist/
+/phase3_style_transfer/presentation/.parcel-cache/
+
+# ===== Pipeline =====
+# /pipeline/results/
+# /pipeline/output/
+
+# ===== Experimental (CycleGAN) =====
+/experimental/writer_cyclegan/checkpoints/
+# /experimental/writer_cyclegan/results/
+/experimental/writer_cyclegan/datasets/
+/experimental/writer_cyclegan/debug*/
+
+# ===== Output Files =====
+# /recognition_results.txt
+# **/predictions_*.txt
+# segmented/
+# output/
+# results/
+
+# ===== Node.js =====
+node_modules/
+**/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm/
+.yarn/
+
+# ===== IDE & Editors =====
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.sublime-workspace
+*.sublime-project
+
+# ===== OS Generated Files =====
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ===== Weights & Biases =====
 wandb/
+**/wandb/
+
+# ===== Logs =====
+logs/
+*.log
+
+# ===== Temporary Files =====
+*.tmp
+*.temp
+*.bak
+*.backup
