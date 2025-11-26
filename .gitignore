@@ -93,7 +93,6 @@ hparams.json
 /phase3_style_transfer/checkpoints/
 /phase3_style_transfer/inference_results/
 /phase3_style_transfer/metric/
-/phase3_style_transfer/networks/
 /phase3_style_transfer/pretrained/
 /phase3_style_transfer/lib/__pycache__/
 /phase3_style_transfer/presentation/node_modules/
