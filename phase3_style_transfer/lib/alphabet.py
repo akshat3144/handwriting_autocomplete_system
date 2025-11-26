@@ -45,8 +45,8 @@ class strLabelConverter(object):
             torch.IntTensor [length_0 + length_1 + ... length_{n - 1}]: encoded texts.
             torch.IntTensor [n]: length of each text.
         """
-        if len(text) == 1:
-            text = text[0]
+        # if len(text) == 1:
+        #     text = text[0]
 
         if isinstance(text, str):
             text = [
@@ -97,7 +97,7 @@ class strLabelConverter(object):
             length = torch.IntTensor([nonzero_count(t)])
 
         if length.numel() == 1:
-            length = length[0]
+            length = length.item()
             assert nonzero_count(t) == length, "{} text with length: {} does not match declared length: {}".\
                                                 format(t, nonzero_count(t), length)
             if raw:
