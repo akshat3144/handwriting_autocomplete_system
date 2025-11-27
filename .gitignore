@@ -77,6 +77,7 @@ word-hwr/
 /phase1_ocr/model_weights/
 /phase1_ocr/data/
 /phase1_ocr/outputs/segmented/
+/phase1_ocr/*.jpg
 
 # ===== Phase 2: Next Word Prediction =====
 /phase2_nextword_prediction/checkpoints/
@@ -108,8 +109,8 @@ hparams.json
 /experimental/writer_cyclegan/data/
 /experimental/writer_cyclegan/debug*/
 
-/transfer_learning_pipeline/*.png
-/transfer_learning_pipeline/*.jpg
+/pipeline_transfer_learning/*.png
+/pipeline_transfer_learning/*.jpg
 
 # ===== Output Files =====
 # /recognition_results.txt
