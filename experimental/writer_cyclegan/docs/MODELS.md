@@ -47,6 +47,33 @@ This document explains each source file in `models/`, the main classes/functions
     - `PixelDiscriminator` — 1×1 discriminator variant.
     - `GANLoss(gan_mode)` — wrapper supporting `lsgan`, `vanilla`, and `wgangp`.
     - `get_scheduler(optimizer, opt)` and `init_weights(net, init_type)` helpers.
+  
+  **Generator CNN Details (ResnetGenerator):**
+  | Layer | Type | Kernel | Stride | Padding | In→Out Channels | Activation |
+  |-------|------|--------|--------|---------|-----------------|------------|
+  | 1 | ReflectionPad2d | - | - | 3 | - | - |
+  | 2 | Conv2d | 7×7 | 1 | 0 | input_nc→64 | ReLU |
+  | 3 | Conv2d (down) | 3×3 | 2 | 1 | 64→128 | ReLU |
+  | 4 | Conv2d (down) | 3×3 | 2 | 1 | 128→256 | ReLU |
+  | 5-13 | ResnetBlock ×9 | 3×3 | 1 | reflect | 256→256 | ReLU |
+  | 14 | ConvTranspose2d (up) | 3×3 | 2 | 1 | 256→128 | ReLU |
+  | 15 | ConvTranspose2d (up) | 3×3 | 2 | 1 | 128→64 | ReLU |
+  | 16 | ReflectionPad2d | - | - | 3 | - | - |
+  | 17 | Conv2d | 7×7 | 1 | 0 | 64→output_nc | Tanh |
+
+  **Discriminator CNN Details (NLayerDiscriminator/PatchGAN):**
+  | Layer | Type | Kernel | Stride | Padding | In→Out Channels | Activation |
+  |-------|------|--------|--------|---------|-----------------|------------|
+  | 1 | Conv2d | 4×4 | 2 | 1 | input_nc→64 | LeakyReLU(0.2) |
+  | 2 | Conv2d | 4×4 | 2 | 1 | 64→128 | LeakyReLU(0.2) |
+  | 3 | Conv2d | 4×4 | 2 | 1 | 128→256 | LeakyReLU(0.2) |
+  | 4 | Conv2d | 4×4 | 1 | 1 | 256→512 | LeakyReLU(0.2) |
+  | 5 | Conv2d | 4×4 | 1 | 1 | 512→1 | None (raw logits) |
+
+  **Normalization:** InstanceNorm2d (generator), BatchNorm2d or InstanceNorm2d (discriminator)
+  
+  **Weight Init:** Normal distribution N(0, 0.02) for Conv/Linear; N(1, 0.02) for BatchNorm
+
   - Debug tips:
     - If `RuntimeError: size mismatch` occurs, check `input_nc` and whether `embed_dim` was counted into `actual_input_nc`.
     - Use `print_networks()` (from `BaseModel`) to confirm network parameter counts and shapes.
