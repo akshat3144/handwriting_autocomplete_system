@@ -170,7 +170,12 @@ class HandwritingAutocompletePipeline:
         img_len = torch.tensor([img_width], dtype=torch.long).to(self.device)
         
         with torch.no_grad():
-            style_vector = self.style_encoder(img_tensor, img_len, self.style_backbone, vae_mode=False)
+            style_output = self.style_encoder(img_tensor, img_len, self.style_backbone, vae_mode=False)
+            # When vae_mode=True, returns (style, mu, logvar). Extract just the style tensor.
+            if isinstance(style_output, tuple):
+                style_vector = style_output[0]
+            else:
+                style_vector = style_output
         
         return style_vector
     
@@ -200,30 +205,38 @@ class HandwritingAutocompletePipeline:
         
         return img_np
     
-    def run(self, image_path, num_words=3, output_path=None):
+    def run(self, image_path, num_words=3, output_path=None, text_input=None, style_image=None):
         """
         Run the complete pipeline.
         
         Args:
-            image_path: Path to input handwriting image
+            image_path: Path to input handwriting image (for OCR if text_input not provided)
             num_words: Number of words to predict
             output_path: Optional path to save generated image
+            text_input: Optional manual text input (skips OCR if provided)
+            style_image: Optional separate image for style extraction (if different from image_path)
         
         Returns:
             dict with original_text, predicted_words, generated_image
         """
         print(f"Processing: {image_path}")
         
-        # Step 1: OCR
-        original_text = self.extract_text(image_path)
-        print(f"Extracted text: '{original_text}'")
+        # Step 1: Get text (OCR or manual input)
+        if text_input:
+            original_text = text_input
+            print(f"Using input text: '{original_text}'")
+        else:
+            original_text = self.extract_text(image_path)
+            print(f"Extracted text: '{original_text}'")
         
         # Step 2: Predict next words
         predicted_words = self.predict_next_words(original_text, num_words)
         print(f"Predicted words: '{predicted_words}'")
         
         # Step 3: Extract style and generate
-        style_vector = self.extract_style(image_path)
+        style_source = style_image if style_image else image_path
+        print(f"Extracting style from: {style_source}")
+        style_vector = self.extract_style(style_source)
         generated_tensor = self.generate_handwriting(style_vector, predicted_words)
         generated_image = self.tensor_to_image(generated_tensor)
         
@@ -249,10 +262,18 @@ def main():
     parser.add_argument("--num_words", type=int, default=3, help="Number of words to predict")
     parser.add_argument("--output", type=str, default=None, help="Output image path")
     parser.add_argument("--checkpoint", type=str, default=None, help="HiGAN checkpoint path")
+    parser.add_argument("--text", type=str, default=None, help="Manual text input (skips OCR)")
+    parser.add_argument("--style_image", type=str, default=None, help="Separate image for style extraction")
     args = parser.parse_args()
     
     pipeline = HandwritingAutocompletePipeline(checkpoint_path=args.checkpoint)
-    result = pipeline.run(args.image, num_words=args.num_words, output_path=args.output)
+    result = pipeline.run(
+        args.image, 
+        num_words=args.num_words, 
+        output_path=args.output,
+        text_input=args.text,
+        style_image=args.style_image
+    )
     
     print("\nResult:")
     print(f"  Original: {result['original_text']}")

@@ -108,6 +108,9 @@ hparams.json
 /experimental/writer_cyclegan/data/
 /experimental/writer_cyclegan/debug*/
 
+/transfer_learning_pipeline/*.png
+/transfer_learning_pipeline/*.jpg
+
 # ===== Output Files =====
 # /recognition_results.txt
 # **/predictions_*.txt
