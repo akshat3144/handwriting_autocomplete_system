@@ -1,0 +1,7 @@
+Device: cuda
+Output directory: B:\College\DL\handwriting_autocomplete_system\phase3_style_transfer\output_files
+Training samples: 52231, batches: 8705
+Models initialized
+ directory: B:\College\DL\handwriting_autocomplete_system\phase3_style_transfer\output_files
+Training samples: 52231, batches: 8705
+Models initialized
