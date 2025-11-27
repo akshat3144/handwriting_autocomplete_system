@@ -156,3 +156,4 @@ logs/
 *.temp
 *.bak
 *.backup
+phase3_style_transfer/architectural_change.md

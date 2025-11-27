@@ -7,6 +7,11 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from . import BigGAN_layers as layers
+from .improved_layers import (
+    SinusoidalPositionalEncoding, TextTransformerEncoder,
+    BiGRUEncoder, StyleContentCrossAttention, AdaIN,
+    ModulatedConv2d, MultiScaleStyleFusion
+)
 from networks.utils import init_weights, _len2mask
 
 # Architectures for G
@@ -350,6 +355,245 @@ class Discriminator(nn.Module):
         out = self.linear(h)
 
         return out
+
+
+# =============================================================================
+# IMPROVED GENERATOR with all architectural enhancements
+# =============================================================================
+class ImprovedGenerator(nn.Module):
+    """
+    HiGAN+ Generator with architectural improvements:
+    1. Transformer encoder for text (replaces linear projection)
+    2. BiGRU for sequential modeling
+    3. Cross-attention for style-content fusion
+    4. AdaIN-based GBlocks (replaces conditional batch norm)
+    5. Positional encoding for character positions
+    6. Multi-scale style skip connections
+    """
+    
+    def __init__(self, G_ch=64, style_dim=32, embed_dim=120,
+                 bottom_width=4, bottom_height=4, resolution=64,
+                 G_kernel_size=3, G_attn='32_64', n_class=80,
+                 num_G_SVs=1, num_G_SV_itrs=1,
+                 G_activation=nn.ReLU(inplace=False),
+                 SN_eps=1e-12, G_fp16=False,
+                 init='ortho', G_param='SN', input_nc=1,
+                 embed_pad_idx=0, embed_max_norm=1.0,
+                 # New parameters for improvements
+                 use_transformer=True,
+                 use_bigru=True,
+                 use_cross_attention=True,
+                 use_adain=True,
+                 transformer_layers=2,
+                 transformer_heads=4,
+                 bigru_layers=1,
+                 max_text_len=50
+                 ):
+        super().__init__()
+        
+        self.name = 'ImprovedG'
+        self.style_dim = style_dim
+        self.ch = G_ch
+        self.embed_dim = embed_dim
+        self.bottom_width = bottom_width
+        self.bottom_height = bottom_height
+        self.resolution = resolution
+        self.n_classes = n_class
+        self.activation = G_activation
+        self.init = init
+        self.fp16 = G_fp16
+        
+        # Flags for improvements
+        self.use_transformer = use_transformer
+        self.use_bigru = use_bigru
+        self.use_cross_attention = use_cross_attention
+        self.use_adain = use_adain
+        
+        # Architecture
+        self.arch = G_arch(self.ch, G_attn)[resolution]
+        
+        # Text embedding with positional encoding
+        self.text_embedding = nn.Embedding(n_class, embed_dim,
+                                           padding_idx=embed_pad_idx,
+                                           max_norm=embed_max_norm)
+        self.pos_encoding = SinusoidalPositionalEncoding(embed_dim, max_text_len, dropout=0.1)
+        
+        # Convolution type
+        if G_param == 'SN':
+            self.which_conv = functools.partial(layers.SNConv2d,
+                                                kernel_size=3, padding=1,
+                                                num_svs=num_G_SVs, num_itrs=num_G_SV_itrs,
+                                                eps=SN_eps)
+            self.which_linear = functools.partial(layers.SNLinear,
+                                                  num_svs=num_G_SVs, num_itrs=num_G_SV_itrs,
+                                                  eps=SN_eps)
+        else:
+            self.which_conv = functools.partial(nn.Conv2d, kernel_size=3, padding=1)
+            self.which_linear = nn.Linear
+        
+        # === Improvement 2: Transformer Encoder for Text ===
+        combined_dim = embed_dim + style_dim
+        if self.use_transformer:
+            self.text_transformer = TextTransformerEncoder(
+                embed_dim=combined_dim,
+                num_layers=transformer_layers,
+                num_heads=transformer_heads,
+                ff_dim=combined_dim * 4,
+                dropout=0.1,
+                max_len=max_text_len
+            )
+        
+        # === Improvement 7: BiGRU for Sequential Modeling ===
+        if self.use_bigru:
+            self.bigru = BiGRUEncoder(
+                input_dim=combined_dim,
+                hidden_dim=combined_dim,
+                num_layers=bigru_layers,
+                dropout=0.0
+            )
+        
+        # === Improvement 1: Cross-Attention for Style-Content Fusion ===
+        if self.use_cross_attention:
+            self.cross_attention = StyleContentCrossAttention(
+                content_dim=combined_dim,
+                style_dim=style_dim,
+                num_heads=4,
+                dropout=0.1
+            )
+        
+        # Linear projection to initial feature map
+        self.filter_linear = self.which_linear(
+            combined_dim,
+            self.arch['in_channels'][0] * (bottom_width * bottom_height)
+        )
+        
+        # Style linear for per-block style codes
+        self.style_linear = self.which_linear(
+            style_dim,
+            style_dim * len(self.arch['in_channels'])
+        )
+        
+        # Generator blocks
+        self.blocks = nn.ModuleList()
+        for index in range(len(self.arch['out_channels'])):
+            in_ch = self.arch['in_channels'][index]
+            out_ch = self.arch['out_channels'][index]
+            upsample = functools.partial(F.interpolate, scale_factor=self.arch['upsample'][index])
+            
+            # === Improvement 3: AdaIN-based GBlock ===
+            if self.use_adain:
+                block = layers.AdaINGBlock(
+                    in_channels=in_ch,
+                    out_channels=out_ch,
+                    style_dim=style_dim,
+                    which_conv=self.which_conv,
+                    activation=self.activation,
+                    upsample=upsample
+                )
+            else:
+                # Fallback to original GBlock with ccbn
+                which_bn = functools.partial(layers.ccbn,
+                                             which_linear=nn.Linear,
+                                             input_size=style_dim,
+                                             norm_style='bn')
+                block = layers.GBlock(
+                    in_channels=in_ch,
+                    out_channels=out_ch,
+                    which_conv1=self.which_conv,
+                    which_conv2=self.which_conv,
+                    which_bn=which_bn,
+                    activation=self.activation,
+                    upsample=upsample
+                )
+            
+            self.blocks.append(block)
+            
+            # Add attention at specified resolutions
+            if self.arch['attention'][self.arch['resolution'][index]]:
+                print(f'Adding attention layer in ImprovedG at resolution {self.arch["resolution"][index]}')
+                self.blocks.append(layers.MultiHeadSelfAttention(out_ch, num_heads=4, which_conv=self.which_conv))
+        
+        # Output layer
+        self.output_layer = nn.Sequential(
+            nn.InstanceNorm2d(self.arch['out_channels'][-1]),
+            self.activation,
+            self.which_conv(self.arch['out_channels'][-1], input_nc)
+        )
+        
+        # Initialize weights
+        if self.init != 'none':
+            init_weights(self, self.init)
+    
+    def forward(self, z, y, y_lens):
+        """
+        Args:
+            z: [B, style_dim] style vector
+            y: [B, seq_len] text indices
+            y_lens: [B] text lengths
+        Returns:
+            [B, 1, H, W] generated image
+        """
+        batch_size = z.size(0)
+        seq_len = y.size(1)
+        
+        # Split style for each block
+        styles = self.style_linear(z).split(self.style_dim, dim=1)
+        
+        # Text embedding with positional encoding
+        y_emb = self.text_embedding(y).float()  # [B, L, embed_dim]
+        y_emb = self.pos_encoding(y_emb)
+        
+        # Expand style and concatenate with text
+        z_expanded = z.unsqueeze(1).expand(-1, seq_len, -1)  # [B, L, style_dim]
+        combined = torch.cat([z_expanded, y_emb], dim=2)  # [B, L, embed_dim + style_dim]
+        
+        # Create padding mask for transformer/bigru
+        padding_mask = ~(_len2mask(y_lens, seq_len).bool())  # True for padded positions
+        
+        # Apply transformer encoder
+        if self.use_transformer:
+            combined = self.text_transformer(combined, src_key_padding_mask=padding_mask)
+        
+        # Apply BiGRU
+        if self.use_bigru:
+            combined = self.bigru(combined, y_lens)
+        
+        # Apply cross-attention with style
+        if self.use_cross_attention:
+            combined = self.cross_attention(combined, z)
+        
+        # Project to initial feature map
+        h = self.filter_linear(combined)  # [B, L, C * bottom_h * bottom_w]
+        
+        # Reshape to spatial: [B, C, bottom_h, L * bottom_w]
+        h = h.view(batch_size, seq_len * self.bottom_width, self.bottom_height, -1)
+        h = h.permute(0, 3, 2, 1)  # [B, C, bottom_h, L * bottom_w]
+        
+        # Process through blocks
+        style_idx = 0
+        for block in self.blocks:
+            if isinstance(block, (layers.AdaINGBlock, layers.GBlock)):
+                if self.use_adain:
+                    h = block(h, styles[style_idx])
+                else:
+                    h = block(h, y=styles[style_idx])
+                style_idx += 1
+            elif isinstance(block, layers.MultiHeadSelfAttention):
+                h = block(h)
+            else:
+                h = block(h)
+        
+        # Output layer
+        output = torch.tanh(self.output_layer(h))
+        
+        # Mask padding during inference
+        if not self.training:
+            out_lens = y_lens * output.size(-1) // seq_len
+            mask = _len2mask(out_lens.int(), output.size(-1), torch.float32).to(z.device).detach()
+            mask = mask.unsqueeze(1).unsqueeze(1)
+            output = output * mask + (mask - 1)
+        
+        return output
 
 
 class PatchDiscriminator(Discriminator):
