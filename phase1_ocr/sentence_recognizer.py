@@ -10,12 +10,30 @@ Usage:
 
 import os
 import sys
+import platform
+
+# Disable GPU to avoid segmentation faults on some macOS environments
+if platform.system() == "Darwin":
+    os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+    os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
+
 import numpy as np
 import cv2
 import pickle
 import argparse
 from pathlib import Path
 import tensorflow as tf
+
+# Try to disable GPU devices programmatically for TensorFlow
+if platform.system() == "Darwin":
+    try:
+        tf.config.set_visible_devices([], 'GPU')
+        visible_devices = tf.config.get_visible_devices()
+        for device in visible_devices:
+            assert device.device_type != 'GPU'
+    except:
+        pass
+
 from tensorflow import keras
 
 # Add word_segmentation module to path (now in same directory)
@@ -230,43 +248,35 @@ def build_crnn_model(input_shape=(32, 128, 1), num_classes=79):
 def load_model_with_weights(model_path, encoder):
     """
     Load model by rebuilding architecture and loading weights
-    This avoids Lambda layer deserialization issues
+    This avoids Lambda layer deserialization issues and potential segfaults on macOS
     """
+    print("  Skipping direct model loading to avoid potential segfaults...")
+    
     try:
-        # Try to load the model directly first
-        print("  Attempting direct model loading...")
-        model = keras.models.load_model(model_path, compile=False, safe_mode=False)
-        print("  ✓ Direct loading successful")
-        return model
-    except Exception as e:
-        print(f"  Direct loading failed: {str(e)[:100]}...")
-        print("  Attempting to rebuild model and load weights...")
+        # Build model architecture
+        model = build_crnn_model(input_shape=(32, 128, 1), num_classes=encoder.vocab_size)
         
-        try:
-            # Build model architecture
-            model = build_crnn_model(input_shape=(32, 128, 1), num_classes=encoder.vocab_size)
+        # Load weights
+        weights_path = model_path.replace('_base.h5', '.weights.h5')
+        if not os.path.exists(weights_path):
+            # Try with just .weights.h5
+            weights_path = model_path.replace('.h5', '.weights.h5')
+        
+        if os.path.exists(weights_path):
+            print(f"  Loading weights from: {weights_path}")
+            model.load_weights(weights_path)
+            print("  ✓ Model rebuilt and weights loaded successfully")
+            return model
+        else:
+            # Try loading weights from the base model file itself
+            print(f"  Loading weights from base model file...")
+            model.load_weights(model_path)
+            print("  ✓ Model rebuilt and weights loaded successfully")
+            return model
             
-            # Load weights
-            weights_path = model_path.replace('_base.h5', '.weights.h5')
-            if not os.path.exists(weights_path):
-                # Try with just .weights.h5
-                weights_path = model_path.replace('.h5', '.weights.h5')
-            
-            if os.path.exists(weights_path):
-                print(f"  Loading weights from: {weights_path}")
-                model.load_weights(weights_path)
-                print("  ✓ Model rebuilt and weights loaded successfully")
-                return model
-            else:
-                # Try loading weights from the base model file itself
-                print(f"  Loading weights from base model file...")
-                model.load_weights(model_path)
-                print("  ✓ Model rebuilt and weights loaded successfully")
-                return model
-                
-        except Exception as e2:
-            print(f"  ✗ Rebuild method failed: {e2}")
-            raise Exception(f"Could not load model: {e2}")
+    except Exception as e2:
+        print(f"  ✗ Rebuild method failed: {e2}")
+        raise Exception(f"Could not load model: {e2}")
 
 
 # ============================================================================
