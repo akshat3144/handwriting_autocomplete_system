@@ -162,3 +162,4 @@ logs/
 *.backup
 
 2.5-7b/
+gpt-2-124M_checkpoints/

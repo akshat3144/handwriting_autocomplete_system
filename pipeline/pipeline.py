@@ -10,6 +10,17 @@ import argparse
 import subprocess
 
 # ============================================================================
+# CONFIGURATION
+# ============================================================================
+
+# Model Selection
+# Options: "2.5-7b", "gpt-2-124M"
+NEXT_WORD_MODEL = "2.5-7b" 
+
+# Number of words to predict
+NUM_NEXT_WORDS = 1
+
+# ============================================================================
 # PATH CONFIGURATION
 # ============================================================================
 
@@ -87,38 +98,59 @@ def run_ocr(image_path):
         return "The quick brown fox"
 
 def run_next_word_prediction(text):
-    """Predict the next word using the 2.5-7b model."""
-    print(f"\n[Step 2] Predicting next word for: '{text}'...")
+    """Predict the next word(s) using the selected model."""
+    print(f"\n[Step 2] Predicting next {NUM_NEXT_WORDS} word(s) for: '{text}' using {NEXT_WORD_MODEL}...")
     
     try:
-        tokenizer = AutoTokenizer.from_pretrained(MODEL_2_5_7B_DIR)
-        model = AutoModelForCausalLM.from_pretrained(MODEL_2_5_7B_DIR, device_map="auto", torch_dtype=torch.float16)
+        if NEXT_WORD_MODEL == "gpt-2-124M":
+            # Use standard GPT-2 (124M) from Hugging Face
+            tokenizer = AutoTokenizer.from_pretrained("gpt2")
+            model = AutoModelForCausalLM.from_pretrained("gpt2")
+            # Move to device if available
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+            if torch.backends.mps.is_available():
+                device = "mps"
+            model = model.to(device)
+            
+        elif NEXT_WORD_MODEL == "2.5-7b":
+            tokenizer = AutoTokenizer.from_pretrained(MODEL_2_5_7B_DIR)
+            model = AutoModelForCausalLM.from_pretrained(MODEL_2_5_7B_DIR, device_map="auto", torch_dtype=torch.float16)
+        else:
+            print(f"Unknown model: {NEXT_WORD_MODEL}")
+            return None
+            
     except Exception as e:
-        print(f"Error loading 2.5-7b model: {e}")
-        # Fallback or exit?
+        print(f"Error loading {NEXT_WORD_MODEL} model: {e}")
         return None
 
     inputs = tokenizer(text, return_tensors="pt").to(model.device)
     
-    # Generate a few tokens
+    # Generate tokens
+    # Ensure we generate enough tokens for the requested number of words
+    max_new = max(10, NUM_NEXT_WORDS * 5)
+    
     with torch.no_grad():
-        outputs = model.generate(**inputs, max_new_tokens=10, do_sample=False)
+        outputs = model.generate(**inputs, max_new_tokens=max_new, do_sample=False)
     
     generated_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
     
     # Extract the new part
-    # This logic depends on how the model echoes the input. Usually it does.
     if generated_text.startswith(text):
         new_text = generated_text[len(text):].strip()
     else:
         new_text = generated_text.strip()
         
-    next_word = new_text.split()[0] if new_text else ""
+    # Get the requested number of words
+    words = new_text.split()
+    if not words:
+        return ""
+        
+    next_words = " ".join(words[:NUM_NEXT_WORDS])
     
-    # Clean up punctuation if needed
-    next_word = ''.join(ch for ch in next_word if ch.isalnum())
+    # Clean up punctuation if needed (optional, but good for style transfer)
+    # next_words = ''.join(ch for ch in next_words if ch.isalnum() or ch.isspace())
     
-    return next_word
+    return next_words
 
 def run_style_transfer(ref_image_path, text_to_gen, output_path):
     """Generate image of text_to_gen using style from ref_image_path."""
@@ -260,7 +292,9 @@ def main():
         print(f"Predicted Next Word: {next_word}")
         
         # 3. Style Transfer
-        output_filename = f"output_{img_name.split('.')[0]}_{next_word}.png"
+        # Sanitize filename
+        safe_next_word = "".join(c for c in next_word if c.isalnum() or c in (' ', '_')).strip().replace(' ', '_')
+        output_filename = f"output_{img_name.split('.')[0]}_{safe_next_word}.png"
         output_path = os.path.join(PIPELINE_DIR, output_filename)
         run_style_transfer(img_path, next_word, output_path)
 
