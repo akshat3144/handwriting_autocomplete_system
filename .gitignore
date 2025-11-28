@@ -160,6 +160,7 @@ logs/
 *.temp
 *.bak
 *.backup
+phase3_style_transfer/architectural_change.md
 
 2.5-7b/
 gpt-2-124M_checkpoints/

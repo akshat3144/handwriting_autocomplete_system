@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 from torch import nn
+import torch.nn.functional as F
 import functools
 from networks.block import Conv2dBlock, ActFirstResBlock, DeepBLSTM, DeepGRU, DeepLSTM, Identity
 from networks.utils import _len2mask, init_weights
@@ -63,9 +64,10 @@ class StyleBackbone(nn.Module):
 
 
 class StyleEncoder(nn.Module):
-    def __init__(self, style_dim=32, in_dim=256, init='N02'):
+    def __init__(self, style_dim=32, in_dim=256, init='N02', use_contrastive=False):
         super(StyleEncoder, self).__init__()
         self.style_dim = style_dim
+        self.use_contrastive = use_contrastive
 
         ######################################
         # Construct StyleEncoder
@@ -79,6 +81,15 @@ class StyleEncoder(nn.Module):
 
         self.mu = nn.Linear(in_dim, style_dim)
         self.logvar = nn.Linear(in_dim, style_dim)
+        
+        # Projection head for contrastive learning
+        if use_contrastive:
+            self.projection_head = nn.Sequential(
+                nn.Linear(style_dim, style_dim * 2),
+                nn.ReLU(),
+                nn.Linear(style_dim * 2, style_dim),
+            )
+        
         if init != 'none':
             init_weights(self, init)
 
@@ -92,6 +103,8 @@ class StyleEncoder(nn.Module):
 
         if vae_mode:
             logvar = self.logvar(style)
+            # Clamp logvar for stability
+            logvar = torch.clamp(logvar, -10, 2)
             style = self.reparameterize(mu, logvar)
             style = (style, mu, logvar)
         else:
@@ -101,6 +114,15 @@ class StyleEncoder(nn.Module):
             return style, all_feats
         else:
             return style
+    
+    def get_contrastive_embedding(self, style):
+        """Get normalized embedding for contrastive loss."""
+        if isinstance(style, tuple):
+            style = style[0]  # Use sampled style if VAE mode
+        if self.use_contrastive:
+            proj = self.projection_head(style)
+            return F.normalize(proj, dim=1)
+        return F.normalize(style, dim=1)
 
     @staticmethod
     def reparameterize(mu, logvar):

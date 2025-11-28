@@ -1,12 +1,22 @@
 ''' Layers
     This file contains various layers for the BigGAN models.
+    Enhanced with AdaIN, Modulated Convolutions, Cross-Attention, and more.
 '''
+import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn import Parameter as P
 from .utils import _len2mask
 import matplotlib.pyplot as plt
+
+# Import improved layers
+from .improved_layers import (
+    AdaIN, ModulatedConv2d, ModulatedGBlock, 
+    MultiHeadCrossAttention, StyleContentCrossAttention,
+    ImprovedSelfAttention, BiGRUEncoder,
+    SinusoidalPositionalEncoding, TextTransformerEncoder
+)
 
 
 # Projection of x onto y
@@ -342,6 +352,108 @@ class SelfAttention(nn.Module):
 
 Attention = SelfAttention
 
+# Multi-Head Self-Attention with improved architecture
+class MultiHeadSelfAttention(nn.Module):
+    """Multi-head self-attention for feature maps."""
+    
+    def __init__(self, in_dim, num_heads=4, which_conv=None):
+        super().__init__()
+        self.num_heads = num_heads
+        self.head_dim = in_dim // num_heads
+        self.scale = self.head_dim ** -0.5
+        
+        conv_cls = which_conv if which_conv else SNConv2d
+        self.query = conv_cls(in_dim, in_dim, kernel_size=1, padding=0)
+        self.key = conv_cls(in_dim, in_dim, kernel_size=1, padding=0)
+        self.value = conv_cls(in_dim, in_dim, kernel_size=1, padding=0)
+        self.out = conv_cls(in_dim, in_dim, kernel_size=1, padding=0)
+        
+        self.gamma = nn.Parameter(torch.zeros(1))
+    
+    def forward(self, x, x_lens=None, **kwargs):
+        B, C, H, W = x.shape
+        
+        q = self.query(x).view(B, self.num_heads, self.head_dim, H * W)
+        k = self.key(x).view(B, self.num_heads, self.head_dim, H * W)
+        v = self.value(x).view(B, self.num_heads, self.head_dim, H * W)
+        
+        # [B, heads, HW, HW]
+        attn = torch.matmul(q.transpose(-2, -1), k) * self.scale
+        
+        # Optional masking for variable length
+        if x_lens is not None:
+            mask = _len2mask(x_lens, W).view(B, 1, 1, W)
+            mask = mask.repeat(1, 1, H, 1).view(B, 1, H * W, 1)
+            mask = mask * mask.transpose(-2, -1)
+            attn = attn.masked_fill(mask == 0, float('-inf'))
+        
+        attn = F.softmax(attn, dim=-1)
+        
+        out = torch.matmul(v, attn.transpose(-2, -1))
+        out = out.view(B, C, H, W)
+        out = self.out(out)
+        
+        return self.gamma * out + x
+
+
+# AdaIN-based Generator Block (StyleGAN-style)
+class AdaINGBlock(nn.Module):
+    """Generator block with AdaIN for style modulation."""
+    
+    def __init__(self, in_channels, out_channels, style_dim,
+                 which_conv=nn.Conv2d, activation=None, upsample=None):
+        super().__init__()
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.upsample = upsample
+        self.activation = activation if activation else nn.ReLU(inplace=False)
+        
+        # Convolutions
+        self.conv1 = which_conv(in_channels, out_channels, kernel_size=3, padding=1)
+        self.conv2 = which_conv(out_channels, out_channels, kernel_size=3, padding=1)
+        
+        # AdaIN layers
+        self.adain1 = AdaIN(out_channels, style_dim)
+        self.adain2 = AdaIN(out_channels, style_dim)
+        
+        # Skip connection
+        self.learnable_sc = in_channels != out_channels or upsample
+        if self.learnable_sc:
+            self.conv_sc = which_conv(in_channels, out_channels, kernel_size=1, padding=0)
+    
+    def forward(self, x, style, **kwargs):
+        """
+        Args:
+            x: [B, C, H, W] input features
+            style: [B, style_dim] style vector
+        """
+        # Shortcut path
+        if self.upsample:
+            x_up = self.upsample(x)
+        else:
+            x_up = x
+        
+        if self.learnable_sc:
+            shortcut = self.conv_sc(x_up)
+        else:
+            shortcut = x_up
+        
+        # Main path
+        h = x
+        if self.upsample:
+            h = self.upsample(h)
+        
+        h = self.conv1(h)
+        h = self.adain1(h, style)
+        h = self.activation(h)
+        
+        h = self.conv2(h)
+        h = self.adain2(h, style)
+        h = self.activation(h)
+        
+        return h + shortcut
+
+
 # Fused batchnorm op
 def fused_bn(x, mean, var, gain=None, bias=None, eps=1e-5):
     # Apply scale and shift--if gain and bias are provided, fuse them here
@@ -632,5 +744,92 @@ class DBlock(nn.Module):
             h = self.downsample(h)
 
         return h + self.shortcut(x)
+
+
+# =============================================================================
+# Improved GBlock with Modulated Convolutions (StyleGAN2-style)
+# =============================================================================
+class ModulatedGBlockV2(nn.Module):
+    """
+    Advanced Generator block with modulated convolutions.
+    Provides finer control over style injection compared to AdaIN.
+    """
+    
+    def __init__(self, in_channels, out_channels, style_dim,
+                 which_conv=None, activation=None, upsample=None, demodulate=True):
+        super().__init__()
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.upsample = upsample
+        self.activation = activation if activation else nn.LeakyReLU(0.2, inplace=False)
+        
+        # Modulated convolutions
+        self.conv1 = ModulatedConv2d(in_channels, out_channels, 3, style_dim, 
+                                      padding=1, demodulate=demodulate)
+        self.conv2 = ModulatedConv2d(out_channels, out_channels, 3, style_dim,
+                                      padding=1, demodulate=demodulate)
+        
+        # Skip connection (not modulated)
+        self.learnable_sc = in_channels != out_channels or upsample
+        if self.learnable_sc:
+            self.conv_sc = nn.Conv2d(in_channels, out_channels, 1, bias=False)
+    
+    def forward(self, x, style, **kwargs):
+        # Shortcut
+        if self.upsample:
+            x_up = self.upsample(x)
+        else:
+            x_up = x
+        
+        shortcut = self.conv_sc(x_up) if self.learnable_sc else x_up
+        
+        # Main path
+        h = x
+        if self.upsample:
+            h = self.upsample(h)
+        
+        h = self.conv1(h, style)
+        h = self.activation(h)
+        h = self.conv2(h, style)
+        h = self.activation(h)
+        
+        return h + shortcut
+
+
+# =============================================================================
+# Cross-Attention Block for Style-Content Fusion
+# =============================================================================
+class StyleContentAttentionBlock(nn.Module):
+    """
+    Applies cross-attention between content features and style.
+    Used in generator to inject style information spatially.
+    """
+    
+    def __init__(self, content_dim, style_dim, num_heads=4):
+        super().__init__()
+        self.cross_attn = StyleContentCrossAttention(
+            content_dim, style_dim, num_heads=num_heads
+        )
+        self.gamma = nn.Parameter(torch.zeros(1))
+    
+    def forward(self, x, style, **kwargs):
+        """
+        Args:
+            x: [B, C, H, W] feature maps
+            style: [B, style_dim] style vector
+        """
+        B, C, H, W = x.shape
+        
+        # Reshape to sequence: [B, H*W, C]
+        x_seq = x.view(B, C, -1).permute(0, 2, 1)
+        
+        # Apply cross-attention
+        out_seq = self.cross_attn(x_seq, style)
+        
+        # Reshape back: [B, C, H, W]
+        out = out_seq.permute(0, 2, 1).view(B, C, H, W)
+        
+        return x + self.gamma * out
+
 
 # dogball

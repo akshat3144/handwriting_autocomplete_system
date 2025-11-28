@@ -391,6 +391,62 @@ class DeepBLSTM(nn.Module):
         return h0_encoder_bi.to(device), c0_encoder_bi.to(device)
 
 
+class DeepBiGRU(nn.Module):
+    """Bidirectional GRU for sequence modeling (improved version)."""
+    def __init__(
+        self, input_size, hidden_size, n_layers=2,
+        dropout=0., batch_first=True
+    ):
+        super(DeepBiGRU, self).__init__()
+        self.input_size = input_size
+        self.hidden_size = hidden_size
+        self.dropout = dropout
+        self.batch_first = batch_first
+        self.n_layer = n_layers
+
+        self.gru = nn.GRU(
+            input_size,
+            hidden_size // 2,
+            n_layers,
+            bidirectional=True,
+            batch_first=True,
+            dropout=dropout if n_layers > 1 else 0
+        )
+        
+        # Layer normalization for stability
+        self.layer_norm = nn.LayerNorm(hidden_size)
+        
+        self.gru.flatten_parameters()
+
+    def forward(self, x, x_len=None):
+        """Forward pass with optional length masking."""
+        self.gru.flatten_parameters()
+        
+        if x_len is not None:
+            # Convert to CPU int64 for pack_padded_sequence
+            x_len_cpu = x_len.cpu().to(torch.int64)
+            x_pack = pack_padded_sequence(x, x_len_cpu, batch_first=self.batch_first, enforce_sorted=False)
+            init_hidden = self.get_init_state(x.size(0), x.device)
+            out_pack, _ = self.gru(x_pack, init_hidden)
+            out, _ = pad_packed_sequence(out_pack, batch_first=self.batch_first)
+        else:
+            init_hidden = self.get_init_state(x.size(0), x.device)
+            out, _ = self.gru(x, init_hidden)
+        
+        out = self.layer_norm(out)
+        return out
+
+    def get_init_state(self, batch_size, device):
+        """Get initial hidden states."""
+        h0 = torch.zeros(
+            self.n_layer * 2,  # bidirectional
+            batch_size,
+            self.hidden_size // 2,
+            requires_grad=False
+        )
+        return h0.to(device)
+
+
 class CosMargin(nn.Module):
     def __init__(self, in_size, out_size, s=None, m=0.):
         super(CosMargin, self).__init__()
