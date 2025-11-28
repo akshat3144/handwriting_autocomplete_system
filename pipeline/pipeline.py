@@ -15,10 +15,10 @@ import subprocess
 
 # Model Selection
 # Options: "2.5-7b", "gpt-2-124M"
-NEXT_WORD_MODEL = "2.5-7b" 
+NEXT_WORD_MODEL = "gpt-2-124M" 
 
 # Number of words to predict
-NUM_NEXT_WORDS = 1
+NUM_NEXT_WORDS = 3
 
 # ============================================================================
 # PATH CONFIGURATION
@@ -47,6 +47,7 @@ try:
     from networks.module import StyleEncoder, StyleBackbone
     from lib.alphabet import strLabelConverter
     from lib.path_config import CharWidth, ImgHeight
+    from lib.utils import yaml2config
 except ImportError as e:
     print(f"Error importing Phase 3 Style Transfer: {e}")
     sys.exit(1)
@@ -162,75 +163,48 @@ def run_style_transfer(ref_image_path, text_to_gen, output_path):
     
     print(f"Using device: {device}")
 
-    # Configs (matching run_generate.py)
-    gen_kwargs = dict(G_ch=64, style_dim=32, embed_dim=120, bottom_width=4, bottom_height=4,
-                      resolution=64, G_kernel_size=3, G_attn='0', n_class=80, input_nc=1)
-    E_kwargs = dict(style_dim=32, in_dim=256)
-    B_kwargs = dict(resolution=16, max_dim=256, in_channel=1)
+    # Load config
+    config_path = os.path.join(PHASE3_DIR, "configs", "gan_iam.yml")
+    cfg = yaml2config(config_path)
 
-    G = Generator(**gen_kwargs).to(device)
-    E = StyleEncoder(**E_kwargs).to(device)
-    B = StyleBackbone(**B_kwargs).to(device)
+    # Initialize models using config
+    G = Generator(**cfg.GenModel).to(device)
+    E = StyleEncoder(**cfg.EncModel).to(device)
+    B = StyleBackbone(**cfg.StyBackbone).to(device)
     
     G.eval()
     E.eval()
     B.eval()
 
     # Load weights
-    # We look for weights in likely locations
     ckpt_path = os.path.join(WORKSPACE_ROOT, "pipeline_transfer_learning", "epoch_70.pth")
-    ocr_path = os.path.join(PHASE3_DIR, "ocr_iam_new.pth")
     wid_path = os.path.join(PHASE3_DIR, "wid_iam_new.pth")
     
-    # Load Generator
     if os.path.exists(ckpt_path):
-        print(f"Loading Generator from {ckpt_path}")
-        full_ckpt = torch.load(ckpt_path, map_location='cpu')
-        # Try to find state dict
-        sd = run_generate.find_state_dict(full_ckpt)
-        if sd:
-            sd = run_generate.normalize_state_dict(sd)
-            try:
-                G.load_state_dict(sd, strict=False)
-            except Exception as e:
-                print(f"Warning: Failed to load G state_dict: {e}")
-        else:
-            # Try full ckpt mapping
-            run_generate.try_load_from_full_ckpt(G, full_ckpt, ['generator', 'Generator', 'G'])
+        print(f"Loading weights from {ckpt_path}")
+        checkpoint = torch.load(ckpt_path, map_location=device)
+        G.load_state_dict(checkpoint["generator"])
+        E.load_state_dict(checkpoint["style_encoder"])
     else:
-        print(f"Error: Generator checkpoint not found at {ckpt_path}")
+        print(f"Error: Checkpoint not found at {ckpt_path}")
         return
 
-    # Load Encoder
-    # run_generate.load_from_paths expects Path objects, not strings
-    from pathlib import Path
-    
-    if not run_generate.load_from_paths(E, ['style_encoder', 'StyleEncoder', 'E'], 'StyleEncoder', Path(ocr_path)):
-        print("Warning: Failed to load StyleEncoder")
-
-    # Load Backbone
-    if not run_generate.load_from_paths(B, ['style_backbone', 'StyleBackbone', 'B'], 'StyleBackbone', Path(wid_path)):
-        print("Warning: Failed to load StyleBackbone")
+    # Load pretrained StyleBackbone
+    if os.path.exists(wid_path):
+        print(f"Loading StyleBackbone from {wid_path}")
+        wid_dict = torch.load(wid_path, map_location=device)
+        if "StyleBackbone" in wid_dict:
+            B.load_state_dict(wid_dict["StyleBackbone"])
+    else:
+        print("Warning: StyleBackbone weights not found")
 
     # Prepare Reference Image
     pil_img = Image.open(ref_image_path).convert('RGB')
     
-    # We need to infer reference text length for scaling?
-    # run_generate uses infer_reference_text(path) which cleans the filename.
-    # But here we have the actual OCR text! We should use it.
-    # However, run_generate.preprocess_image uses target_chars to determine width.
-    # If we pass the OCR text length, it might be better.
-    # But wait, run_generate.preprocess_image logic:
-    # target_chars = max(1, target_chars or int(round(scaled_w / float(char_width))))
-    # If we don't pass target_chars, it estimates from width.
-    # Let's stick to estimation or use a default to avoid mismatch if OCR is very wrong.
-    # Actually, using the OCR text length is probably better if OCR is good.
-    # But let's just let it estimate to be safe.
-    
     img_t, img_w, ref_char_len = run_generate.preprocess_image(
         pil_img,
         target_h=ImgHeight,
-        invert=True, # Default in run_generate
+        invert=True,
         target_chars=None,
         char_width=CharWidth
     )
@@ -240,12 +214,21 @@ def run_style_transfer(ref_image_path, text_to_gen, output_path):
     
     # Encode Style
     with torch.no_grad():
-        enc_z = E(img_t, img_len, B, vae_mode=False)
+        style_output = E(img_t, img_len, B, vae_mode=False)
+        if isinstance(style_output, tuple):
+            style_vector = style_output[0]
+        else:
+            style_vector = style_output
     
     # Prepare Target Text
-    converter = strLabelConverter('all')
-    labels, lengths = run_generate.encode_texts(converter, [text_to_gen], device)
-    style_batch = enc_z.repeat(1, 1) # Batch size 1
+    alphabet_key = "_".join(cfg.dataset.split("_")[:2])
+    converter = strLabelConverter(alphabet_key)
+    
+    labels, lengths = converter.encode([text_to_gen])
+    labels = labels.to(device)
+    lengths = lengths.to(device)
+    
+    style_batch = style_vector.repeat(1, 1) # Batch size 1
     
     # Generate
     with torch.no_grad():
