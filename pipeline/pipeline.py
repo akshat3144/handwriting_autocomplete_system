@@ -224,6 +224,10 @@ def run_style_transfer(ref_image_path, text_to_gen, output_path):
     
     # Save
     pil_out = run_generate.tensor_to_pil(resized[0])
+    
+    # Invert the image (to get black text on white background)
+    pil_out = Image.fromarray(255 - np.array(pil_out))
+    
     pil_out.save(output_path)
     print(f"Saved generated image to {output_path}")
 
