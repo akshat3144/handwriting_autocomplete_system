@@ -60,6 +60,99 @@ def KLloss(mu, logvar):
 
 
 ##############################################################################
+# Contrastive Style Loss (InfoNCE)
+##############################################################################
+class ContrastiveStyleLoss(nn.Module):
+    """
+    InfoNCE-style contrastive loss for style learning.
+    Pulls same-writer samples together, pushes different writers apart.
+    """
+    
+    def __init__(self, temperature=0.07):
+        super().__init__()
+        self.temperature = temperature
+    
+    def forward(self, style_vectors, writer_ids):
+        """
+        Args:
+            style_vectors: [B, D] style vectors (should be normalized)
+            writer_ids: [B] writer ID for each sample
+        Returns:
+            scalar loss
+        """
+        batch_size = style_vectors.size(0)
+        device = style_vectors.device
+        
+        # Normalize style vectors
+        style_vectors = F.normalize(style_vectors, dim=1)
+        
+        # Compute similarity matrix [B, B]
+        sim_matrix = torch.matmul(style_vectors, style_vectors.T) / self.temperature
+        
+        # Create positive mask (same writer = 1)
+        writer_ids = writer_ids.view(-1, 1)
+        positive_mask = (writer_ids == writer_ids.T).float()
+        
+        # Remove self-similarity from positives
+        positive_mask.fill_diagonal_(0)
+        
+        # Mask out self-similarity for denominator
+        logits_mask = torch.ones_like(sim_matrix)
+        logits_mask.fill_diagonal_(0)
+        
+        exp_sim = torch.exp(sim_matrix) * logits_mask
+        
+        # Sum of positive similarities
+        pos_sum = (exp_sim * positive_mask).sum(dim=1)
+        
+        # Sum of all similarities (excluding self)
+        all_sum = exp_sim.sum(dim=1)
+        
+        # InfoNCE loss
+        loss = -torch.log((pos_sum + 1e-8) / (all_sum + 1e-8))
+        
+        # Only compute for samples with positive pairs
+        valid_mask = positive_mask.sum(dim=1) > 0
+        if valid_mask.sum() > 0:
+            loss = loss[valid_mask].mean()
+        else:
+            loss = torch.tensor(0.0, device=device)
+        
+        return loss
+
+
+##############################################################################
+# Improved Perceptual Loss (Multi-scale)
+##############################################################################
+class MultiScalePerceptualLoss(nn.Module):
+    """Multi-scale perceptual loss with learned weights."""
+    
+    def __init__(self, num_scales=3):
+        super().__init__()
+        self.num_scales = num_scales
+        # Learnable scale weights
+        self.scale_weights = nn.Parameter(torch.ones(num_scales))
+    
+    def forward(self, fake_feats, real_feats, img_lens):
+        """
+        Args:
+            fake_feats: list of feature maps from fake images
+            real_feats: list of feature maps from real images
+            img_lens: [B] image lengths
+        """
+        weights = F.softmax(self.scale_weights, dim=0)
+        loss = 0
+        
+        for i, (fake_feat, real_feat) in enumerate(zip(fake_feats[:self.num_scales], 
+                                                        real_feats[:self.num_scales])):
+            scale = 2 ** (self.num_scales - i)
+            scale_loss = recn_l1_loss(fake_feat, real_feat, img_lens // scale)
+            loss += weights[i] * scale_loss
+        
+        return loss
+
+
+##############################################################################
 # Contextual loss
 ##############################################################################
 class CXLoss(nn.Module):
