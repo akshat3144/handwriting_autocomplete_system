@@ -63,7 +63,9 @@ def run_ocr(image_path):
     ]
     
     env = os.environ.copy()
-    env["CUDA_VISIBLE_DEVICES"] = "-1"
+    # Only disable GPU on macOS to avoid segfaults
+    if sys.platform == "darwin":
+        env["CUDA_VISIBLE_DEVICES"] = "-1"
     
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, check=True, env=env)

@@ -2,41 +2,16 @@
 HANDWRITTEN SENTENCE RECOGNITION RESULTS
 ================================================================================
 
-Image: image.jpg
-Total words detected: 23
-Total lines: 6
+Image: /Users/raghav_sarna/Desktop/Drive/Plaksha/Semester 5/DL/handwriting/handwriting_autocomplete_system/pipeline/test2.jpeg
+Total words detected: 3
+Total lines: 1
 
 Individual words:
-  Word  1: 'Thre'
-  Word  2: 'wind'
-  Word  3: 'houted'
-  Word  4: 'agairst'
-  Word  5: 'the'
-  Word  6: 'cabin'
-  Word  7: 'as'
-  Word  8: 'dena'
-  Word  9: 'wropped'
-  Word 10: 'the'
-  Word 11: 'blanket'
-  Word 12: 'trgrtes'
-  Word 13: 'hgping'
-  Word 14: 'the'
-  Word 15: 'stooun'
-  Word 16: 'would'
-  Word 17: 'pess'
-  Word 18: 'Jous'
-  Word 19: 'She'
-  Word 20: 'ventured'
-  Word 21: 'beek'
-  Word 22: 'unto'
-  Word 23: 'darsk'
+  Word  1: 'Jep'
+  Word  2: 'dearring'
+  Word  3: 'is'
 
 Recognized sentence:
-  Line 1: Thre wind houted agairst
-  Line 2: the cabin as dena wropped
-  Line 3: the blanket trgrtes hgping
-  Line 4: the stooun would pess Jous
-  Line 5: She ventured beek unto
-  Line 6: darsk
+  Line 1: Jep dearring is
 
-Full text: Thre wind houted agairst the cabin as dena wropped the blanket trgrtes hgping the stooun would pess Jous She ventured beek unto darsk
+Full text: Jep dearring is
