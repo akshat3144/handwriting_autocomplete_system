@@ -8,8 +8,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import os
+import argparse
 from pathlib import Path
-from .segmenter import WordSegmenter
+
+try:
+    from .segmenter import WordSegmenter
+except ImportError:
+    from segmenter import WordSegmenter
 
 # Get the directory where this script is located
 SCRIPT_DIR = Path(__file__).parent
@@ -128,4 +133,10 @@ def visualize_pipeline(image_path='test_image.png', output_path='pipeline_steps.
 
 
 if __name__ == "__main__":
-    visualize_pipeline()
+    parser = argparse.ArgumentParser(description="Visualize word segmentation pipeline")
+    parser.add_argument("--image", type=str, default="test_image.png", help="Path to input image")
+    parser.add_argument("--output", type=str, default="pipeline_steps.png", help="Path to output visualization")
+    
+    args = parser.parse_args()
+    
+    visualize_pipeline(args.image, args.output)

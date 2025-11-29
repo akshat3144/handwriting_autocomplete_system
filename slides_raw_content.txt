@@ -1,0 +1,760 @@
+Abhijeet, Akshat, Devyansh A. & Raghav.
+Hand Writing Imitation
+Predicting your next word, in your hand-
+writing
+गहरा अध्ययन
+Deep Learning
+:D
+D
+I
+S
+C
+R
+I
+M
+I
+N
+A
+T
+O
+R
+Page 2
+Understanding
+of the problem
+OCR
+Next Word Prediction
+Handwriting Style Transfer
+Early Ideas
+OCR
+Problems:
+Different handwriting styles, noise, distortions, and uneven word
+frequency.
+Requires learning spatial features (character shapes) and
+sequential dependencies (ordering of characters).
+CTC-based alignment must handle variable-length inputs.
+Generalization across writers, styles, and rare words is difficult.
+Possible Architectures Performance Metrics
+CRNN
+Attention-based
+Transformer/ViT
+Hybrid CNN-
+Transformer.
+CER
+WER
+Jaro-Winkler
+(sequence similarity)
+Exact Word Accuracy
+Paper 1
+Paper 1
+Handwritten Text Recognition Using Deep
+Handwritten Text Recognition Using Deep
+Learning: A CNN-LSTM Approach
+Learning: A CNN-LSTM Approach
+Josephine Prem Kumar. (2025). Handwritten Text Recognition Using Deep Learning: A CNN-
+LSTM Approach. International Journal of Intelligent Systems and Applications in Engineering,
+13(1), 14–22. Retrieved from https://ijisae.org/index.php/IJISAE/article/view/7443
+Methodology
+CRNN model combining CNN + BiLSTM
+CTC loss for alignment
+Jaro-Winkler similarity for evaluation
+Observations
+Good on simple/common words
+Errors in vowel-heavy or rare words
+Overfitting after ~20 epochs
+Struggles with cursive/noisy text
+Performance metrics
+After 50 epochs
+Performance metrics :
+Analysis
+Strong spatial + sequence learning
+Needs more regularization & data
+augmentation
+Cursive/complex handwriting still
+challenging
+Metrics
+CER 4.57%
+WER 12.30%
+UP NEXT:Our OCR ImplementationNext Word Prediction
+Handwriting Style Transfer
+UP NEXT:Our OCR ImplementationNext Word Prediction
+Handwriting Style Transfer
+UP NEXT:
+Our OCR ImplementationNext Word Prediction
+Handwriting Style Transfer
+Metrics
+CER 5.77%
+WER 21%
+Current Limitations
+Struggles with heavily cursive/messy
+handwriting
+Limited to English alphabet + basic
+punctuation
+Accuracy decreases for very long words
+(13+ chars)
+May merge/split words with inconsistent
+spacing
+UP NEXT:
+OCR (Word Segmentation)Next Word Prediction
+Handwriting Style Transfer
+Page 2
+Next Word Prediction
+Given partial OCR text, predict semantically and grammatically
+coherent next word(s)
+Problems:
+Capture long-range dependencies.
+Handle misspelled/incorrect words from OCR
+Need fast predictions for interactive handwriting autocomplete
+Possible Archs: Transformer-Based, LSTM/GRU-Based, CNN + LSTM
+How do we evaluate such problems?
+HellaSwag Benchmark Dataset
+Next Word Prediction
+Why Transformer Based?
+Aspect Transformer
+Based LSTM/GRU CNN + LSTM
+Speed Fast (parallel) Slow (sequential) Medium
+Long-Range
+Context Excellent Weak Moderate
+Scalability Very high Low Medium
+Next-Word
+Accuracy
+Highest Lowest Mid-range
+Handwriting Style Transfer
+Page 2
+Generating a handwritten version of arbitrary text in the style of a
+specific writer.
+Problems:
+Model must learn not only the shapes of letters but also the
+speed, pressure, and fluidity of strokes of an individual.
+Small datasets (often few samples per writer).
+Style Transfer Task but Zero-shot Learning.
+End-to-End needs for multi-lingual tasks.
+Possible Archs: RNNs, GANs, CVAEs & ViT (Transformer).
+How do we evaluate such problems?
+Accuracy (of Correct word), Stylometry(Style resemblence) and
+Perceptual Quality (Realism of the handwriting)
+Early Ideas
+Page 4
+Understanding of
+SOLUTIONS PROPOSED BY
+OTHERS
+Page 2
+Understanding of
+SOLUTIONS PROPOSED BY
+OTHERS
+OCR
+Next Word Prediction
+Handwriting Style Transfer
+UP NEXT:
+OCRNext Word Prediction
+Handwriting Style Transfer
+Page 2
+Attention Is All You Need
+Attention Is All You Need
+Next WorD PREdiction
+Next WorD PREdiction
+Methodology
+Introduces the Transformer, eliminating recurrence entirely
+Uses self-attention to model global dependencies
+Employs multi-head attention, positional encoding, and
+stacked encoder–decoder blocks
+Observations
+Self-attention enables parallel computation
+Model learns long-range dependencies more effectively than
+RNNs
+Training becomes faster and more scalable with larger datasets
+Performance metrics
+Compared against RNN/CNN baselines on WMT 2014 English-
+German and English-French
+Evaluated on training speed, parameter efficiency, and accuracy
+Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A. N., Kaiser, L., & Polosukhin,
+I. (2017). Attention Is All You Need (Version 7). arXiv. https://doi.org/10.48550/ARXIV.1706.03762
+Analysis
+Transformer achieves state-of-the-art performance with
+significantly less training time
+Language Models are
+Language Models are
+Unsupervised Multitask Learners
+Unsupervised Multitask Learners
+Radford, A., Wu, J., Child, R., Luan, D., Amodei, D., & Sutskever, I. (2019). Language Models are
+Unsupervised Multitask Learners.
+Next WorD PREdiction
+Next WorD PREdiction
+Methodology
+GPT-2: scaled-up Transformer decoder
+Architecture unchanged from Attention Is All You Need
+Trained with unsupervised next-token prediction on WebText
+Observations
+Model performs many tasks (translation, QA, summarization,
+cloze) without supervision
+Larger model size strongly improves generalization and task
+emergence
+Performance metrics
+Evaluated in zero-shot settings on standard NLP benchmarks
+Metrics include perplexity, accuracy, and task-specific scores (e.g.,
+summarization ROUGE, QA accuracy)
+Compared performance across model scales
+Analysis
+No new architecture—scale is the key
+Unsupervised training → multitask behavior
+Confirms Transformers alone can power broad language
+capabilities
+Handwriting Style Transfer
+Page 2
+Generating a handwritten version of arbitrary text in the style of a
+specific writer.
+Problems:
+Model must learn not only the shapes of letters but also the
+speed, pressure, and fluidity of strokes of an individual.
+Small datasets (often few samples per writer).
+Style Transfer Task but Zero-shot Learning.
+End-to-End needs for multi-lingual tasks.
+Possible Archs: RNNs, GANs, CVAEs & ViT (Transformer).
+How do we evaluate such problems?
+Accuracy (of Correct word), Stylometry(Style resemblence) and
+Perceptual Quality (Realism of the handwriting)
+Paper 1
+Paper 1
+GANwriting: Content-Conditioned
+GANwriting: Content-Conditioned
+Generation of Styled Handwriting
+Generation of Styled Handwriting
+Methodology
+Fully convolutional architecture paired with style encoder for
+caligraphical features and a local as well as global content
+encoder.
+Three complementary losses adversarial, writer ID, and text
+recogn. ensure realism, style, and content accuracy.
+Observations
+Non-Recurrent design with inherent parallelism.
+Continuity to the learned latent style space.
+Limited to short words, needs multiple reference samples, and
+struggles with extreme calligraphic styles.
+Performance metrics
+Style and content metrics :
+Metric HiGAN+
+FID (↓) 20.5539
+WIER 0.8455
+Analysis
+Human evaluators misclassified generated images 50.7% of the
+time.
+Kang, Lei, Pau Riba, Yaxing Wang, Marçal Rusiñol, Alicia Fornés, and Mauricio Villegas.
+"GANwriting: Content-Conditioned Generation of Styled Handwritten Word Images.
+" Preprint.
+2020. arXiv:2003.02567. Dai, Gang, Yifan Zhang, Quhui Ke, Qiangya Guo, and Shuangping Huang.
+2024.
+“One-Shot Diffusion Mimicker for Handwritten Text Generation.
+” arXiv.
+https://arxiv.org/abs/2409.04004.
+Paper 2
+Paper 2
+ScrabbleGAN: Semi-Supervised Varying
+ScrabbleGAN: Semi-Supervised Varying
+Length Handwritten Text Generation
+Length Handwritten Text Generation
+Fogel, Sharon, Hadar Averbuch-Elor, Sarel Cohen, Shai Mazor, and Roee Litman.
+"ScrabbleGAN:
+Semi-Supervised Varying Length Handwritten Text Generation.
+" arXiv preprint
+arXiv:2003.10557, 2020. https://arxiv.org/abs/2003.10557.
+Methodology
+Fully convolutional architecture that avoids RNNs.
+Overlapping CNN receptive fields create natural ligatures and
+smooth cursive transitions.
+Each character is converted into a letter-token and concatenated
+like Scrabble tiles to generate.
+Observations
+HI is fundamentally influenced by adjacent words (local).
+Imbalanced losses lead to unreadable text or gibberish.
+Lexicon words benefits more for Domain adaptation than style.
+Cannot imitate reference styles and struggles with OOV words.
+Performance metrics
+Model size: 81.8 MB
+Style and content metrics :
+Metric HiGAN+
+FID (↓) 23.78
+NED(↓) 3.52*
+Analysis
+Worst WIER(1) even after good metrics.
+It also enabled arbitrarily long outputs.
+WER (↓) 11.68
+CER (↓) 4.06*
+IS (↑) 2.89
+*Dang Hoai Nam, Huynh Tong Dang Khoa, and Vo Nguyen Le Duy,
+Transformer" (preprint, 2025), arXiv:2505.13235,
+"WriteViT: Handwritten Text Generation with Vision
+Transactions on Graphics
+Paper 3
+Paper 3
+HiGAN+: Handwriting Imitation GAN with
+HiGAN+: Handwriting Imitation GAN with
+Disentangled Representations
+Disentangled Representations
+Ji Gan, Weiqiang Wang, Jiaxu Leng, and Xinbo Gao. 2022. HiGAN+: Handwriting Imitation
+GAN with Disentangled Representations. ACM Trans. Graph. 42, 1, Article 11 (February 2023),
+17 pages. https://doi.org/10.1145/3550070
+Methodology
+HiGAN+ uses a disentangled GAN architecture with specialized
+modules, exploits loss to focus on high level context as well as
+local textures.
+Observations
+Contextual and patch losses significantly boost style fidelity
+and local quality.
+Failure cases include punctuation/digits and scribbled styles
+due to training data biases.
+Humans naturally disentangle Style and content.
+Performance metrics
+Most compact model: 21.7 MB
+Passes human turing test
+Style and content metrics(SOTA GaN):
+Metric HiGAN+
+FID (↓) 16.114
+KID (↓) 0.81
+WER (↓) 7.25
+Analysis
+CER (↓) 6.07
+Provides a novel, precise one-shot
+handwriting style transfer approach with
+strong global and local consistency.
+IS (↑) 1.4059
+WIER(↓) 0.5821
+CYCLEGAN
+CYCLEGAN
+proposed model
+proposed model
+Jun-Yan Zhu∗ Taesung Park∗ Phillip Isola Alexei A. Efros Berkeley AI Research (BAIR)
+Unpaired Image-to-Image Translation using Cycle-Consistent Adversarial Networks
+(18 pages) https://doi.org/10.48550/arXiv.1703.10593
+Methodology
+Writer-aware CycleGAN using ResNet-9 (Resnet
+9blocks)
+_
+generators and PatchGAN discriminators. Supports writer ID
+embedding. Trains with LSGAN, style-L1, and OCR-consistency.
+Observations
+Discriminators and generators converge without collapse.
+OCR loss drop confirms text legibility maintained.
+Limitations: style embedding not effectively learned, even
+with style loss.
+Performance metrics
+Stable optimization across all losses D
+_
+A 0.30→0.23, D
+B
+_
+0.20→0.12, cycle ~0.07–0.12
+Text Preservation holds (OCR error 0.053→0.019)
+Analysis
+Writer-aware CycleGAN enables unpaired handwriting style
+transfer, keeping text content and readability intact. It
+works with writer IDs and style images, but style capture
+remains shallow, suggesting the need for stronger style-
+injection
+Page 4
+Novelty and understanding
+OF PROPOSED METHODS
+BY THE TEAM
+UP NEXT:
+OCRNext Word Prediction
+Handwriting Style Transfer
+Page 2
+UP NEXT:
+Handwriting Style Transfer
+Next Word Prediction
++
+Followed along the well know Andrej Kaparthy’s videos on
+reproducing GPT from scratch.
+UP NEXT:
+Handwriting Style Transfer
+Next Word Prediction
+Due to infeasibility for training GPT 2 on our hardware, took checkpoints for the
+same tutorial’s job and used them instead.
+Courtesy of @saqib1707, for whom it took 46 hours using two NVIDIA A100 GPUs
+UP NEXT:
+Handwriting Style Transfer
+Next Word Prediction
+Hellaswag (Hard Endings, Lots of Inferences, Situations
+With Adversarial Generations) Benchmark Dataset
+Completion-Based Evaluation Evaluation Process
+1. Tokenize Everything
+2. Compute Loss per Ending
+3. Select Lowest Loss
+4. Compare with Label
+UP NEXT:
+Handwriting Style Transfer
+Next Word Prediction
+Interesting things implemented from the guide
+Weight Tying (Parameter Sharing)
+The Input Embedding layer (tokens -> vectors) and the Output Head
+(vectors -> probabilities) share the exact same weights.
+Why It Matters
+Semantic Logic: The vector representation for "cat" at the input should
+be the same target vector used to predict "cat" at the output.
+Massive Efficiency:
+The embedding table is huge (50,257 x 768).
+Sharing this saves ~38 million parameters.
+Reduces total model size by ~30%.
+UP NEXT:
+Handwriting Style Transfer
+Next Word Prediction
+Interesting things implemented from the guide
+Residual Stream Initialization
+The Challenge: Variance Explosion
+Residual connections follow the formula: xl+1
+=xl
++ f(xl ).
+Because we keep adding to the signal, the variance of activations
+grows drastically as the network gets deeper, leading to instability.
+The Solution: 1/2N Scaling (Similar to that in UDL!!)
+Scale the weights of residual layers by 1/2N (where N is the
+number of layers).
+The Outcome
+Counteracts the growth caused by summation.
+Keeps the variance of the output roughly 1.0 from start to finish.
+"clean" signal propagation and stable training.
+UP NEXT:
+Handwriting Style Transfer
+Next Word Prediction
+Interesting things implemented from the guide
+The "Ugly Numbers" Optimization
+Original GPT-2 vocab size is 50,257. This number is prime and odd.
+GPUs struggle with this; they prefer powers of 2 (32, 64, 128) to avoid
+inefficient boundary checks.
+The Fix: Pad to 50,304
+Artificially increase vocab size to 50,304.
+50,304 is divisible by 128, allowing CUDA kernels to fully saturate
+hardware.
+The Counter-Intuitive Result
+~4% Speedup in training.
+Even though we added more parameters (fake tokens), the GPU
+runs significantly faster because the math aligns with the hardware
+architecture.
+Handwriting Style Transfer
+Style Reference:
+Handwriting Style Transfer
+StyleGAN2-inspired generator (AdaIN + modulated conv) for precise per-writer stroke and shape
+control
+Style content alignment via cross-attention + Transformer + BiGRU
+Writer-disentangled style encoding using VAE + contrastive learning for consistent writer identity
+across new text
+Better realism & readability using multi-scale (global + patch + char-attention) discriminators
++
+Cross Attention
+“good day for”
+Content + Style Features
+AdaIN Generator
+Handwriting Style Transfer
+StyleGAN2-inspired generator (AdaIN + modulated conv) for precise per-writer stroke and shape
+control
+Style content alignment via cross-attention + Transformer + BiGRU
+Writer-disentangled style encoding using VAE + contrastive learning for consistent writer identity
+across new text
+Better realism & readability using multi-scale (global + patch + char-attention) discriminators
++
+Cross Attention
+“good day for”
+Content + Style Features
+AdaIN Generator
+Handwriting Style Transfer
+StyleGAN2-inspired generator (AdaIN + modulated conv) for precise per-writer stroke and shape
+control
+Style content alignment via cross-attention + Transformer + BiGRU
+Writer-disentangled style encoding using VAE + contrastive learning for consistent writer identity
+across new text
+Better realism & readability using multi-scale (global + patch + char-attention) discriminators
++
+Cross Attention
+“good day for”
+Content + Style Features
+AdaIN Generator
+Transfer Learning Pipeline: Overview
+Extracted Text Predicted Word Output Styled
+Handwriting
+Transfer Learning Pipeline: Architecture
+Pre-Trained on
+Hand Written
+Dataset
+(Microsoft)
+~334M
+Parameters
+Pre-Trained on
+Web-Text (40GB)
+~355M
+Parameters
+Trained on IAM
+Dataset
+~38M
+Parameters
+Generator: ~25M
+Style Backbone: ~8M
+Style Encoder: ~0.2M
+Discriminator: ~5M
+Total: ~38M
+Transfer Learning Pipeline: Flow
+Handwritten
+Input
+Transfer Learning Pipeline: Flow
+Handwritten
+Input
+Transfer Learning Pipeline: Flow
+Handwritten
+Input
+OCR Prediction
+TrOCR
+Reads: “the
+Quick Brown Fox”
+Transfer Learning Pipeline: Flow
+Handwritten
+Input
+OCR Prediction
+TrOCR
+Reads: “the
+Quick Brown Fox”
+Next Word
+Prediction
+GPT-2
+Predicts: “jumps
+over the”
+Transfer Learning Pipeline: Flow
+Handwritten
+Input
+OCR Prediction
+TrOCR
+Reads: “the
+Quick Brown Fox”
+Next Word
+Prediction
+GPT-2
+Predicts: “jumps
+over the”
+Image of “jumps
+over the” with
+transferred style
+HIGAN+
+CrossStyloGAN: Transformer-enhanced GAN
+CrossStyloGAN: Transformer-enhanced GAN
+style
+z
+_
+[B,32]
+[B, 1, 64, W]
+Linear
+Projection
+[B,L,CxHxW]
+Reshape
+to 4D
+[B,512,3,Lx4]
+AdaIN GBlock x4
++MultiHead Attn +
+Output
+Layer
+Skip Connections
+____________
+[B,1,64,W
+out]
+_
+(Writer Disentangle)
+BiGRU Enc
+(Sequence Model)
+Ji Gan, Weiqiang Wang, Jiaxu Leng, and Xinbo Gao. 2022. HiGAN+: Handwriting Imitation
+GAN with Disentangled Representations. ACM Trans. Graph. 42, 1, Article 11 (February 2023),
+17 pages. https://doi.org/10.1145/3550070
+Our solution
+Our solution
+Methodology
+HiGAN+ uses a disentangled GAN architecture with specialized
+modules, exploits loss to focus on high level context as well as
+local textures.
+Observations
+Contextual and patch losses significantly boost style fidelity
+and local quality.
+Failure cases include punctuation/digits and scribbled styles
+due to training data biases.
+Humans naturally disentangle Style and content.
+Performance metrics
+Most compact model: 21.7 MB
+Passes human turing test
+Style and content metrics(SOTA GaN):
+Metric HiGAN+
+Analysis
+Provides a novel, precise one-shot
+handwriting style transfer approach with
+strong global and local consistency.
+FID (↓) 16.114
+KID (↓) 0.81
+WER (↓) 7.25
+CER (↓) 6.07
+IS (↑) 1.4059
+WIER(↓) 26.18
+style
+z
+_
+[B,32]
+Linear
+Projection
+[B,L,CxHxW]
+BiGRU Enc
+(Sequence Model)
+[B, 1, 64, W]
+Reshape
+to 4D
+[B,512,3,Lx4]
+AdaIN GBlock x4
++MultiHead Attn +
+Output
+Layer
+Skip Connections
+____________
+[B,1,64,W
+out]
+_
+(Writer Disentangle)
+100
+80
+60
+G_Loss
+D_Loss
+40
+20
+0
+1
+3
+5
+7
+9
+11
+13
+15
+17
+19
+21
+Epochs
+23
+25
+27
+29
+31
+33
+35
+37
+39
+41
+43
+45
+47
+49
+1.2
+1.1
+1.0
+0.9
+0.8
+0.7
+0.6
+0.5
+0.4
+0.3
+0.2
+0.1
+0.0
+1
+3
+5
+7
+9
+11
+13
+15
+17
+19
+21
+Epochs
+23
+25
+27
+29
+31
+33
+35
+37
+39
+41
+43
+45
+47
+49
+Epochs
+Epochs
+0
+1
+3
+5
+7
+9
+11
+13
+15
+17
+19
+21
+23
+25
+27
+29
+31
+33
+35
+37
+39
+41
+43
+45
+47
+49
+0
+1
+3
+5
+7
+9
+11
+13
+15
+17
+19
+21
+23
+25
+27
+29
+31
+33
+35
+37
+39
+41
+43
+45
+47
+49
+1
+5
+2
+Loss
+10
+3
+Adv_Loss
+4
+5
+15
+6
+7
+20
+wid_loss ctc
+_
+loss
+8
+Page 4
+Implementation of
+PROPOSED METHODS
+Page 4
+Lessons learnt from
+EXPERIMENTATION
