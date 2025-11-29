@@ -8,7 +8,7 @@
 
 This project aims to develop a **Handwriting Autocomplete System** that not only predicts the next word in a sentence but also generates that prediction in the user's unique handwriting style. The system integrates three major deep learning components: **Optical Character Recognition (OCR)** to understand the user's input, **Next Word Prediction (NWP)** to anticipate the user's intent, and **Handwriting Style Transfer** to render the prediction seamlessly.
 
-By leveraging state-of-the-art architectures like CNN-LSTMs, Transformers (GPT-2), and Generative Adversarial Networks (HiGAN+), we address the complex challenge of maintaining semantic coherence while preserving the visual authenticity of handwritten text.
+By leveraging state-of-the-art architectures like CNN-LSTMs, Transformers (GPT-2), and our novel **CrossStyloGAN**, we address the complex challenge of maintaining semantic coherence while preserving the visual authenticity of handwritten text.
 
 ---
 
@@ -85,21 +85,36 @@ To ensure efficiency and stability, we implemented several advanced techniques:
 ## 5. Phase 3: Handwriting Style Transfer
 
 ### 5.1 Overview
-The final and most visually complex phase is generating the predicted word in the user's handwriting style. We adopted a **Modified HiGAN+ (Handwriting Imitation GAN)** architecture, which excels at disentangling style from content.
+The final and most visually complex phase is generating the predicted word in the user's handwriting style. We developed **CrossStyloGAN**, a novel architecture that outperforms the existing state-of-the-art HiGAN+ by introducing significant architectural improvements for better style disentanglement and generation quality.
 
-### 5.2 Architecture: Modified HiGAN+
-Our implementation introduces several key innovations over the original HiGAN+ paper to enhance realism and stability.
+### 5.2 Architecture: CrossStyloGAN
+Our proposed model introduces **8 major architectural novelties**, categorized into three key areas: Text Processing, Generator Enhancements, and Output Discrimination.
 
 ![Style Transfer Pipeline](report_assets/style_transfer_pipeline.jpg)
-*Figure 4: The Style Transfer pipeline architecture.*
+*Figure 4: The CrossStyloGAN architecture.*
 
-#### Key Innovations:
-1.  **Dual-Scale Discriminator:**
-    *   **Global Discriminator:** Evaluates overall word structure and consistency.
-    *   **Patch Discriminator:** Focuses on fine-grained details like ink texture and pen pressure.
-2.  **VAE Integration:** We integrated a Variational Autoencoder (VAE) into the style encoder. This allows for a continuous style manifold, enabling smooth interpolation between styles and reducing mode collapse.
-3.  **Gradient Penalty Balancing:** We implemented an adaptive mechanism to balance gradients from different losses (CTC, Writer ID, Reconstruction), ensuring no single objective dominates the training.
-4.  **Contextual Loss:** A loss function that measures feature distribution similarity without requiring strict pixel-level alignment, helping capture writer-specific stroke thickness and slant.
+#### A. Text Processing
+To better capture the sequential nature of handwriting and global context, we enhanced the text encoding pipeline:
+
+1.  **Positional Encoding (Novelty 8):** We injected sinusoidal positional encodings (from Transformers) into text embeddings. This provides the model with crucial sequence order information, ensuring consistent left-to-right flow and proper character spacing.
+2.  **Global Context Modeling using Transformers (Novelty 4):** A multi-layer Transformer encoder with self-attention was added to capture global word-level patterns, allowing each character to "see" all other characters for better context.
+3.  **Sequence Modeling using BiGRU (Novelty 3):** A Bidirectional GRU was employed to capture sequential dependencies (both left-to-right and right-to-left), essential for modeling ligatures and consistent slant.
+4.  **Cross-Attention Fusion (Novelty 2):** Instead of simple concatenation, we implemented multi-head cross-attention where text queries attend to style keys/values. This allows the model to selectively apply style features relevant to specific characters.
+
+#### B. Generator Side
+We significantly upgraded the generator to improve style control and retention:
+
+5.  **StyleGAN2-Style Control (Novelty 1):** We replaced standard conditional batch normalization with **AdaIN (Adaptive Instance Normalization)** and **Modulated Convolutions**. This allows for fine-grained, per-writer style control at the convolution level.
+6.  **Skip-Connections for Multi-Scale Style Retention (Novelty 7):** We added skip connections that inject multi-scale style features from the encoder directly into different stages of the generator, preserving fine stroke details that are often lost in deep networks.
+7.  **Writer-Disentangled Style via Contrastive Learning (Novelty 5):** We utilized InfoNCE contrastive loss to force the style encoder to cluster same-writer samples together and push different writers apart, effectively disentangling style from content.
+
+#### C. Output Section
+To ensure high-fidelity generation at both global and local levels:
+
+8.  **Multi-Scale, Multi-Head Discriminator (Novelty 6):** We implemented a discriminator with a shared backbone and three specialized heads:
+    *   **Global Head:** Evaluates overall word structure.
+    *   **Patch Head:** Focuses on local texture and ink quality.
+    *   **Character Head:** Attends to per-character quality.
 
 ### 5.3 Performance
 The model was evaluated using metrics such as **FID (Fréchet Inception Distance)** for image quality and **WIER (Writer Identification Error Rate)** for style consistency. The dual-scale discriminator significantly reduced blurriness, resulting in sharper character boundaries.
@@ -117,7 +132,7 @@ The full system operates as a seamless pipeline:
 2.  **OCR:** The system reads the text.
 3.  **Prediction:** GPT-2 predicts the next word (e.g., "jumps").
 4.  **Style Extraction:** The system analyzes the style of the input sentence.
-5.  **Generation:** HiGAN+ generates the word "jumps" using the extracted style.
+5.  **Generation:** CrossStyloGAN generates the word "jumps" using the extracted style.
 6.  **Output:** The user sees "jumps" appear in their own handwriting.
 
 This end-to-end flow demonstrates the power of combining discriminative models (OCR), generative language models (GPT-2), and conditional image generation models (GANs) into a cohesive application.
