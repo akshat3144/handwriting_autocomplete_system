@@ -1699,6 +1699,11 @@ Iteration 5: Train D + Train G  ← G trains every 4th iteration
 - Prevents G from outpacing D (mode collapse)
 - Stabilizes adversarial training
 
+**Why 4:1?**
+- Gives D time to provide meaningful gradients
+- Prevents G from outpacing D (mode collapse)
+- Stabilizes adversarial training
+
 ---
 
 ## 📊 Output Examples

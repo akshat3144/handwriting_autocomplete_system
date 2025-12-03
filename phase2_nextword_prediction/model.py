@@ -13,6 +13,15 @@ class GPTConfig:
     embd_size: int = 768    # embedding dim
     num_heads: int = 12
 
+# #params calculation add
+# 50257 * 768 + =>38,597,376 #token embeddings
+# 1024 * 768 + =>786,432 #positional embeddings
+
+# 4*(768 * 768) =>2,359,296 #4xmulti head
+# (4*768)*768 + (4*768)*768 = 4,718,592 #up + down ffn
+
+# 12*(2,359,296 + 4,718,592) = 85 M
+# 85 + 38 + 1 = 124 M
 
 class CausalSelfAttention(nn.Module):
     def __init__(self, config):
