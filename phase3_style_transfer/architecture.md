@@ -183,6 +183,377 @@ Input Batch (after padding):
 
 ---
 
+## 🔧 Core Building Blocks
+
+Before diving into the novelties, these are the fundamental components used throughout the architecture:
+
+### Spectral Normalization (SN)
+
+**File**: `networks/BigGAN_layers.py` → `SN`, `SNConv2d`, `SNLinear`
+
+**Purpose**: Stabilize GAN training by constraining the Lipschitz constant of the discriminator.
+
+```python
+class SpectralNorm:
+    """
+    Constrains weight matrix W so that ||W||_spectral ≤ 1
+    
+    The spectral norm is the largest singular value of W.
+    By dividing W by this value, we ensure the layer doesn't
+    amplify inputs too much → prevents exploding gradients.
+    
+    Uses Power Iteration to estimate largest singular value:
+    1. v = W^T @ u / ||W^T @ u||
+    2. u = W @ v / ||W @ v||
+    3. σ = u^T @ W @ v (singular value)
+    """
+    def forward(self, weight):
+        # Estimate largest singular value via power iteration
+        sigma = power_iteration(weight, u, v, num_iters=1)
+        # Normalize weight
+        return weight / sigma
+```
+
+**Where Used**:
+- All Conv2d layers in Generator (`SNConv2d`)
+- All Linear layers in Generator (`SNLinear`)
+- All layers in Discriminator
+- Embedding layers (`SNEmbedding`)
+
+### Self-Attention Layer
+
+**File**: `networks/BigGAN_layers.py` → `SelfAttention`
+
+**Purpose**: Allow spatial positions to attend to each other for global coherence.
+
+```python
+class SelfAttention(nn.Module):
+    """
+    Self-attention for 2D feature maps.
+    Each pixel can attend to every other pixel.
+    
+    Dimensions:
+        Input:  [B, C, H, W]
+        Query:  [B, C//8, H×W]  ← Reduced channels for efficiency
+        Key:    [B, C//8, H×W]
+        Value:  [B, C, H×W]     ← Full channels for output
+    """
+    def __init__(self, in_dim):
+        self.query_conv = SNConv2d(in_dim, in_dim//8, 1)  # 1×1 conv
+        self.key_conv = SNConv2d(in_dim, in_dim//8, 1)
+        self.value_conv = SNConv2d(in_dim, in_dim, 1)
+        self.gamma = nn.Parameter(torch.zeros(1))  # Learnable scale
+    
+    def forward(self, x):
+        B, C, H, W = x.size()
+        
+        # Project to Q, K, V
+        Q = self.query_conv(x).view(B, -1, H*W)  # [B, C/8, N]
+        K = self.key_conv(x).view(B, -1, H*W)    # [B, C/8, N]
+        V = self.value_conv(x).view(B, -1, H*W)  # [B, C, N]
+        
+        # Attention: softmax(Q^T @ K)
+        attention = softmax(Q.transpose(1,2) @ K)  # [B, N, N]
+        
+        # Apply attention to values
+        out = V @ attention.transpose(1,2)  # [B, C, N]
+        out = out.view(B, C, H, W)
+        
+        # Residual with learnable scale
+        return self.gamma * out + x
+```
+
+**Dimension Example** (at resolution with C=64 channels, H=8, W=40):
+```
+Input:  [B, 64, 8, 40]  ← Feature map from GBlock
+Query:  [B, 8, 320]     (64/8 = 8 channels, 8×40 = 320 positions)
+Key:    [B, 8, 320]
+Value:  [B, 64, 320]    (full channels preserved)
+Attention: [B, 320, 320]  ← Each spatial position attends to all others
+Output: [B, 64, 8, 40]
+```
+
+**⚠️ Important: Two Different Attention Mechanisms in This Model**
+
+| Attention Type | Location | Query Dim | Key Dim | Purpose |
+|----------------|----------|-----------|---------|---------|
+| **Self-Attention** | `BigGAN_layers.py` | C//8 (spatial) | C//8 (spatial) | Pixel-to-pixel coherence |
+| **Cross-Attention** | `improved_layers.py` | 152 (text) | 32 (style) | Style-content fusion |
+
+**Self-Attention** (here): Spatial, operates on feature maps [B, C, H, W]
+- Query/Key: Reduced channels (C//8) for efficiency
+- Value: Full channels (C) for expressiveness
+- Used in Generator blocks for spatial coherence
+
+**Cross-Attention** (Novelty 2): Semantic, operates on sequences [B, L, D]
+- Query: Text features (152-dim = embed + style)
+- Key/Value: Style vector (32-dim)
+- Used to fuse style information into text features
+
+**Why for Handwriting**: Self-attention ensures consistent stroke style across the entire word spatially.
+
+### GBlock (Generator Block)
+
+**File**: `networks/BigGAN_layers.py` → `GBlock`
+
+**Purpose**: Main building block of Generator. Upsamples and transforms features.
+
+```python
+class GBlock(nn.Module):
+    """
+    Residual block with conditional batch normalization.
+    
+    Structure:
+        x → BN → ReLU → Upsample → Conv → BN → ReLU → Conv → + residual
+                  ↓                                         ↑
+              (style conditioning via ccbn)         (skip connection)
+    """
+    def __init__(self, in_ch, out_ch, style_dim, upsample=True):
+        # Conditional batch norm layers (style-conditioned)
+        self.bn1 = ccbn(in_ch, style_dim)   # γ, β from style
+        self.bn2 = ccbn(out_ch, style_dim)
+        
+        # Convolutions with spectral norm
+        self.conv1 = SNConv2d(in_ch, out_ch, 3, padding=1)
+        self.conv2 = SNConv2d(out_ch, out_ch, 3, padding=1)
+        
+        # Skip connection (learnable if channels change)
+        self.skip = SNConv2d(in_ch, out_ch, 1) if in_ch != out_ch else Identity
+    
+    def forward(self, x, style):
+        h = self.bn1(x, style)           # Style-conditioned norm
+        h = F.relu(h)
+        h = F.interpolate(h, scale_factor=2)  # Upsample 2×
+        h = self.conv1(h)
+        h = self.bn2(h, style)
+        h = F.relu(h)
+        h = self.conv2(h)
+        
+        # Skip connection (also upsampled)
+        skip = F.interpolate(x, scale_factor=2)
+        skip = self.skip(skip)
+        
+        return h + skip
+```
+
+### DBlock (Discriminator Block)
+
+**File**: `networks/BigGAN_layers.py` → `DBlock`
+
+**Purpose**: Main building block of Discriminator. Downsamples and extracts features.
+
+```python
+class DBlock(nn.Module):
+    """
+    Residual block for discriminator (no conditioning).
+    
+    Structure:
+        x → ReLU → Conv → ReLU → Conv → Downsample → + residual
+                                                      ↑
+                                             (skip connection)
+    """
+    def __init__(self, in_ch, out_ch, downsample=True):
+        self.conv1 = SNConv2d(in_ch, out_ch, 3, padding=1)
+        self.conv2 = SNConv2d(out_ch, out_ch, 3, padding=1)
+        self.skip = SNConv2d(in_ch, out_ch, 1) if in_ch != out_ch else Identity
+        self.downsample = downsample
+    
+    def forward(self, x):
+        h = F.relu(x)
+        h = self.conv1(h)
+        h = F.relu(h)
+        h = self.conv2(h)
+        
+        if self.downsample:
+            h = F.avg_pool2d(h, 2)  # Downsample 2×
+        
+        # Skip connection
+        skip = self.skip(x)
+        if self.downsample:
+            skip = F.avg_pool2d(skip, 2)
+        
+        return h + skip
+```
+
+### Conditional Batch Normalization (ccbn)
+
+**File**: `networks/BigGAN_layers.py` → `ccbn`
+
+**Purpose**: Style-conditioned normalization. The style vector controls scale (γ) and shift (β).
+
+```python
+class ccbn(nn.Module):
+    """
+    Conditional Batch Normalization.
+    
+    Standard BN: y = γ * (x - μ) / σ + β  (γ, β are learned)
+    Conditional BN: γ, β come from a linear projection of the style vector
+    
+    This allows different styles to normalize features differently.
+    """
+    def __init__(self, num_features, style_dim):
+        self.bn = nn.BatchNorm2d(num_features, affine=False)  # No learnable params
+        self.gain = SNLinear(style_dim, num_features)  # γ from style
+        self.bias = SNLinear(style_dim, num_features)  # β from style
+    
+    def forward(self, x, style):
+        # Standard batch normalization (no affine)
+        x = self.bn(x)
+        
+        # Style-specific scale and shift
+        gain = self.gain(style).view(-1, C, 1, 1)  # [B, C, 1, 1]
+        bias = self.bias(style).view(-1, C, 1, 1)
+        
+        return x * (1 + gain) + bias
+```
+
+**Dimension Flow**:
+```
+Input x: [B, 256, 16, 80]
+Style:   [B, 32]
+     ↓
+BN(x):   [B, 256, 16, 80]  (normalized, zero mean, unit var)
+     ↓
+gain = Linear(style): [B, 32] → [B, 256] → [B, 256, 1, 1]
+bias = Linear(style): [B, 32] → [B, 256] → [B, 256, 1, 1]
+     ↓
+Output:  x * (1 + gain) + bias  → [B, 256, 16, 80]
+```
+
+---
+
+## 🖼️ Three Types of Generated Images
+
+During training, the Generator produces **three different types** of images, each serving a specific purpose:
+
+### 1. Random Style Images (`fake_imgs`)
+```python
+z_dist.sample_()  # Sample random style z ~ N(0,1)
+fake_imgs = generator(z_dist, fake_lbs, fake_lb_lens)
+```
+- **Style Source**: Random vector from standard normal distribution
+- **Text Source**: Random words from lexicon
+- **Purpose**: Test if discriminator can detect "invented" styles
+- **Losses Applied**: Adversarial, CTC, Info Loss
+
+### 2. Style Transfer Images (`style_imgs`)
+```python
+enc_z = style_encoder(real_imgs, ...)  # Encode real image style
+style_imgs = generator(enc_z, fake_lbs, fake_lb_lens)  # Different text!
+```
+- **Style Source**: Encoded from real handwriting sample
+- **Text Source**: Random words (different from original)
+- **Purpose**: Generate new text in existing writer's style
+- **Losses Applied**: Adversarial, CTC, Writer ID, Contextual
+
+### 3. Reconstruction Images (`recn_imgs`)
+```python
+enc_z = style_encoder(real_imgs, ...)  # Encode real image style
+recn_imgs = generator(enc_z, real_lbs, real_lb_lens)  # SAME text!
+```
+- **Style Source**: Encoded from real handwriting sample
+- **Text Source**: Same text as original image
+- **Purpose**: Should perfectly reconstruct the input
+- **Losses Applied**: Adversarial, CTC, Writer ID, **Reconstruction L1 (×5.0)**
+
+### Visual Summary
+```
+Real Image: "hello" by Writer A
+     │
+     ├─→ Encode Style ─→ z_A [32-dim]
+     │                        │
+     │    ┌───────────────────┼───────────────────┐
+     │    │                   │                   │
+     │    ▼                   ▼                   ▼
+     │  "world"            "hello"           z_random
+     │    │                   │                   │
+     │    ▼                   ▼                   ▼
+     │ style_imgs         recn_imgs          fake_imgs
+     │ (style transfer)   (reconstruction)  (random style)
+     │                         │
+     └─────────────────────────┴──→ Should match original!
+```
+
+---
+
+## 🔍 Auxiliary Networks (Frozen During Training)
+
+### Recognizer (OCR Network)
+
+**File**: `networks/module.py` → `Recognizer`
+
+**Purpose**: Ensures generated text is **readable**. Acts as a "text critic".
+
+**Architecture**:
+```
+Input Image: [B, 1, 64, W]
+     ↓
+CNN Backbone (same structure as StyleBackbone):
+  ResBlocks + MaxPool × 4
+  [B, 1, 64, W] → [B, 256, 4, W/16]
+     ↓
+Squeeze height: [B, 256, W/16]
+     ↓
+BiLSTM (2 layers, bidirectional):
+  [B, W/16, 256] → [B, W/16, 256]
+  Captures left-to-right and right-to-left context
+     ↓
+Linear: [B, W/16, 80]  (80 character classes)
+     ↓
+Log-Softmax: [B, W/16, 80]
+     ↓
+CTC Decode → "hello"
+```
+
+**Key Parameters**:
+- `n_class`: 80 (a-z, A-Z, 0-9, punctuation, blank token)
+- `rnn_depth`: 2 (BiLSTM layers)
+- `len_scale`: 16 (output width = input_width / 16)
+
+**CTC Loss Details**:
+```python
+ctc_loss = CTCLoss(zero_infinity=True, reduction='mean')
+
+# For each generated image type:
+loss = ctc_loss(
+    log_probs,      # [T, B, 80] from recognizer
+    targets,        # [B, L] ground truth characters
+    input_lengths,  # [B] actual output sequence lengths
+    target_lengths  # [B] actual text lengths
+)
+```
+
+### Writer Identifier
+
+**File**: `networks/module.py` → `WriterIdentifier`
+
+**Purpose**: Classifies which of 372 writers produced an image.
+
+**Architecture**:
+```
+Input Image: [B, 1, 64, W]
+     ↓
+StyleBackbone (shared with StyleEncoder):
+  [B, 1, 64, W] → [B, 256, W/16]
+     ↓
+Global Average Pool (masked):
+  [B, 256, W/16] → [B, 256]
+     ↓
+MLP: Linear(256→256) + LeakyReLU + Linear(256→372)
+     ↓
+Output: [B, 372] (logits for each writer)
+```
+
+**Loss**:
+```python
+wid_loss = CrossEntropyLoss()(
+    writer_identifier(generated_img),  # [B, 372]
+    real_writer_ids                     # [B] ground truth
+)
+```
+
+---
+
 ## 🔬 Eight Major Architectural Novelties (Detailed)
 
 ### 1️⃣ StyleGAN2-Style Control (AdaIN + ModConv)
@@ -274,6 +645,17 @@ class ModulatedConv2d(nn.Module):
 
 **Solution**: Multi-head cross-attention where text queries attend to style information.
 
+#### Exact Cross-Attention Dimensions (from config)
+
+| Parameter | Value | Source/Calculation |
+|-----------|-------|-------------------|
+| **Query Dimension (content_dim)** | **152** | `embed_dim + style_dim = 120 + 32` |
+| **Key/Value Dimension (style_dim)** | **32** | Style vector dimension from config |
+| **Embedding Dimension** | **152** | Same as content_dim (projects to same space) |
+| **Number of Heads** | **4** | Configured in Generator |
+| **Head Dimension** | **38** | `embed_dim / num_heads = 152 / 4` |
+| **Dropout** | **0.1** | Regularization |
+
 ```python
 class StyleContentCrossAttention(nn.Module):
     """
@@ -283,39 +665,91 @@ class StyleContentCrossAttention(nn.Module):
     The model learns to attend to relevant style information
     for each character position.
     """
+    def __init__(self, content_dim=152, style_dim=32, num_heads=4):
+        self.cross_attn = MultiHeadCrossAttention(
+            query_dim=content_dim,   # 152 (text+style concat)
+            key_dim=style_dim,       # 32 (pure style vector)
+            embed_dim=content_dim,   # 152 (projection space)
+            num_heads=num_heads      # 4 heads
+        )
+    
     def forward(self, content, style):
-        # content: [B, L, D_content] - text embeddings
-        # style: [B, 1, D_style] - global style vector (expanded)
+        # content: [B, L, 152] - text+style embeddings
+        # style: [B, 32] - global style vector
         
-        # Cross-attention
-        # Q from content, K/V from style
-        Q = self.q_proj(content)  # [B, L, embed_dim]
-        K = self.k_proj(style)    # [B, 1, embed_dim]
-        V = self.v_proj(style)    # [B, 1, embed_dim]
+        # Expand style for attention: [B, 32] → [B, 1, 32]
+        style = style.unsqueeze(1)
         
-        # Attention scores: how much should each text position
-        # attend to the style?
-        attn = softmax(Q @ K.T / sqrt(d_k))  # [B, L, 1]
+        # Cross-attention: Q from content, K/V from style
+        Q = self.q_proj(content)  # [B, L, 152] → [B, L, 152]
+        K = self.k_proj(style)    # [B, 1, 32] → [B, 1, 152]
+        V = self.v_proj(style)    # [B, 1, 32] → [B, 1, 152]
         
-        # Apply attention
-        attended = attn @ V  # [B, L, embed_dim]
+        # Split into heads: [B, L, 152] → [B, 4, L, 38]
+        # Attention: Q @ K^T / sqrt(38)
+        attn = softmax(Q @ K.T / sqrt(38))  # [B, 4, L, 1]
         
-        # Residual + FFN
-        return content + FFN(attended)
+        # Apply attention and merge heads
+        attended = attn @ V  # [B, 4, L, 38] → [B, L, 152]
+        
+        # Output projection back to content_dim
+        return self.out_proj(attended) + content  # Residual
+
 ```
-**Dimension Flow:**
+
+#### Multi-Head Cross-Attention Internals
+
+```python
+class MultiHeadCrossAttention(nn.Module):
+    """
+    Detailed dimension flow for 4-head cross-attention.
+    """
+    def __init__(self, query_dim=152, key_dim=32, embed_dim=152, num_heads=4):
+        self.head_dim = embed_dim // num_heads  # 152/4 = 38
+        
+        # Projection layers
+        self.q_proj = nn.Linear(query_dim, embed_dim)   # 152 → 152
+        self.k_proj = nn.Linear(key_dim, embed_dim)     # 32 → 152
+        self.v_proj = nn.Linear(key_dim, embed_dim)     # 32 → 152
+        self.out_proj = nn.Linear(embed_dim, query_dim) # 152 → 152
+        
+        self.scale = self.head_dim ** -0.5  # 1/sqrt(38) ≈ 0.162
 ```
-Content:  [B, 20, 152] (20 chars, embed_dim=120 + style_dim=32)
-Style:    [B, 1, 32]   (global style vector expanded)
-     ↓
-Q Proj:   [B, 20, 152]
-K Proj:   [B, 1, 152]
-V Proj:   [B, 1, 152]
-     ↓
-Attention: [B, 20, 1] (each char attends to style)
-     ↓
-Output:   [B, 20, 152] (style-informed content)
+
+**Dimension Flow (Step-by-Step):**
 ```
+Query (Text+Style features):
+    Input:  [B, L_text, 152]  ← (embed_dim=120) + (style_dim=32)
+    Q Proj: [B, L_text, 152]  ← Linear(152→152)
+    Reshape: [B, 4, L_text, 38]  ← 4 heads × 38 dims each
+
+Key/Value (Style vector):
+    Input:  [B, 1, 32]   ← style_dim, expanded to sequence
+    K Proj: [B, 1, 152]  ← Linear(32→152)
+    V Proj: [B, 1, 152]  ← Linear(32→152)
+    Reshape: [B, 4, 1, 38]  ← 4 heads × 38 dims each
+
+Attention Computation:
+    Scores: Q @ K^T = [B, 4, L_text, 38] @ [B, 4, 38, 1]
+          = [B, 4, L_text, 1]  ← attention weights per head
+    Softmax: [B, 4, L_text, 1]  ← normalized (sum to 1)
+    
+Apply Attention:
+    Weighted V: [B, 4, L_text, 1] @ [B, 4, 1, 38]
+              = [B, 4, L_text, 38]  ← attended values
+
+Merge Heads:
+    Concat: [B, L_text, 152]  ← 4 × 38 = 152
+    Out Proj: [B, L_text, 152]  ← Linear(152→152)
+
+Output: [B, L_text, 152] (style-informed content features)
+```
+
+**Intuition**: Each of the 4 attention heads can learn different style aspects:
+- Head 1: Stroke thickness information
+- Head 2: Slant/angle information  
+- Head 3: Letter spacing patterns
+- Head 4: Character shape variations
 
 **Why for Handwriting?**
 - Different characters may need different style emphasis (e.g., 'o' vs 'l' have different stroke patterns)
@@ -890,7 +1324,7 @@ FUSED FEATURES: [24, 10, 152]
       │
       ▼
 ┌─────────────────────────────────────┐
-│       LINEAR PROJECTION            │
+│       LINEAR PROJECTION             │
 ├─────────────────────────────────────┤
 │ Linear(152, 512×4×4)                │
 │ [24, 10, 152] → [24, 10, 8192]      │
@@ -1020,65 +1454,250 @@ REAL/FAKE IMAGE: [24, 1, 64, 320]
 
 ## 📉 Loss Functions
 
-### Generator Losses
+### Generator Losses (Actual Training Weights)
 
-| Loss | Weight | Purpose | Formula |
+| Loss | Weight (λ) | Purpose | Formula |
 |------|--------|---------|---------|
-| GAN Loss | 1.0 | Fool discriminator | $-\mathbb{E}[D(G(z,y))]$ |
-| Reconstruction L1 | 1.0 | Match real images | $\|G(z,y) - x_{real}\|_1$ |
-| KL Divergence | 0.0005 | VAE regularization | $D_{KL}(q(z\|x) \|\| p(z))$ |
-| Perceptual | 2.0 | Feature matching | $\sum_l \|VGG_l(fake) - VGG_l(real)\|_1$ |
-| Contextual (CX) | 1.5 | Style similarity | $-\log(CX(fake, real))$ |
-| Gram (Style) | 2.5 | Texture matching | $\|Gram(fake) - Gram(real)\|_F$ |
-| OCR | 1.0 | Text correctness | $CTC(OCR(fake), text)$ |
-| Writer ID | 1.0 | Writer consistency | $CE(WID(fake), writer_{id})$ |
-| **Contrastive** | 0.1 | Style disentanglement (Novelty 5) | InfoNCE |
+| **Adversarial (Hinge)** | 1.0 | Fool discriminator | $-\mathbb{E}[D(G(z,y))]$ |
+| **Patch Adversarial** | 1.0 | Local realism | $-\mathbb{E}[D_{patch}(G(z,y))]$ |
+| **CTC (OCR)** | **3.0** | Text readability | $CTC(Recognizer(fake), text)$ |
+| **Writer ID** | **1.5** | Style consistency | $CE(WriterID(fake), writer_{id})$ |
+| **Reconstruction L1** | **5.0** | Pixel fidelity | $\|G(z,y) - x_{real}\|_1$ |
+| **Info Loss** | **1.5** | Style cycle consistency | $\|Encoder(G(z)) - z\|_1$ |
+| **Contextual (CX)** | λ_ctx (1.0) | Feature matching | $-\log(CX(fake, real))$ |
+| **KL Divergence** | λ_kl (0.0001) | VAE regularization | $D_{KL}(q(z\|x) \|\| p(z))$ |
+
+**Total Generator Loss:**
+$$L_G = L_{adv} + L_{patch} + 3.0 \cdot L_{CTC} + 1.5 \cdot L_{info} + 1.5 \cdot L_{WID} + 5.0 \cdot L_{recn} + \lambda_{ctx} \cdot L_{CX} + \lambda_{kl} \cdot L_{KL}$$
+
+**Weight Interpretation (Why These Values?):**
+- **Reconstruction (5.0)**: Highest weight because exact pixel match is critical for style learning
+- **CTC (3.0)**: Second highest because text must be readable
+- **Writer ID & Info (1.5)**: Medium weight for style consistency  
+- **Adversarial (1.0)**: Baseline weight for realism
+- **KL (0.0001)**: Very low to avoid over-regularization of latent space
 
 ### Discriminator Losses
 
-| Loss | Weight | Purpose |
-|------|--------|---------|
-| Real/Fake | 1.0 | Standard adversarial |
-| R1 Regularization | 10.0 | Gradient penalty |
-| Consistency | 0.1 | Multi-scale agreement (Novelty 6) |
+| Loss | Weight | Purpose | Formula |
+|------|--------|---------|---------|
+| **Hinge (Real)** | 1.0 | Push real scores > 1 | $\mathbb{E}[\max(0, 1 - D(x_{real}))]$ |
+| **Hinge (Fake)** | 1.0 | Push fake scores < -1 | $\mathbb{E}[\max(0, 1 + D(G(z)))]$ |
+| **Patch (Real)** | 1.0 | Local real detection | Same, on patches |
+| **Patch (Fake)** | 1.0 | Local fake detection | Same, on patches |
+
+**Hinge Loss Explained:**
+```python
+# Discriminator wants: D(real) > 1 and D(fake) < -1
+d_loss = (
+    F.relu(1 + D(fake)).mean() +      # Penalize if fake > -1
+    F.relu(1 - D(real)).mean()        # Penalize if real < 1
+)
+
+# Generator wants: D(fake) as high as possible
+g_loss = -D(fake).mean()              # Maximize discriminator score
+```
+
+### Loss Function Details
+
+#### CTC Loss (Connectionist Temporal Classification)
+```python
+ctc_loss = CTCLoss(zero_infinity=True, reduction='mean')
+
+# Applied to 3 types of generated images:
+ctc_rand = ctc_loss(recognizer(fake_imgs), fake_labels, ...)    # Random style
+ctc_style = ctc_loss(recognizer(style_imgs), fake_labels, ...)  # Style transfer
+ctc_recn = ctc_loss(recognizer(recn_imgs), real_labels, ...)    # Reconstruction
+
+ctc_total = ctc_rand + ctc_style + ctc_recn  # All must be readable
+```
+
+**Why CTC?**
+- Handles variable-length alignment (image width ≠ text length)
+- Allows blank tokens and repeated characters
+- No character-level segmentation needed
+
+#### Info Loss (Style Cycle Consistency)
+```python
+# If Generator uses style z, encoding the output should recover z
+info_loss = |Encoder(Generator(z)) - z|
+
+# Ensures Generator actually uses the style vector
+# Prevents mode collapse where style is ignored
+```
+
+#### Contextual Loss (Feature Matching)
+```python
+class CXLoss:
+    """
+    Matches feature DISTRIBUTIONS, not exact positions.
+    For each generated patch, find best matching real patch.
+    """
+    def forward(self, real_feat, fake_feat):
+        # Cosine similarity between all patch pairs
+        similarity = cosine_sim(real_patches, fake_patches)
+        
+        # Soft matching (differentiable argmax)
+        weights = softmax(-distance / temperature)
+        
+        # Loss: negative log of best matches
+        return -log(max_similarity)
+```
 
 ---
 
 ## 🎛️ Hyperparameters
 
-```yaml
-# Model Architecture
-style_dim: 32           # Style vector dimension
-embed_dim: 120          # Text embedding dimension
-G_ch: 64                # Generator base channels
-D_ch: 64                # Discriminator base channels
-resolution: 64          # Image height
-char_width: 32          # Pixels per character
+### Actual Configuration (from `configs/gan_iam.yml`)
 
+```yaml
+# =============================================================================
+# CORE DIMENSIONS
+# =============================================================================
+img_height: 64          # Fixed image height (pixels)
+char_width: 32          # Pixels per character (output width = L × 32)
+style_dim: 32           # Style vector dimension (z)
+embed_dim: 120          # Character embedding dimension
+n_class: 80             # Vocabulary size (a-z, A-Z, 0-9, punctuation, blank)
+max_word_len: 20        # Maximum text length
+
+# =============================================================================
+# GENERATOR ARCHITECTURE
+# =============================================================================
+GenModel:
+  G_ch: 64              # Base channel multiplier
+  style_dim: 32         # Style vector size
+  embed_dim: 120        # Text embedding size
+  bottom_width: 4       # Initial spatial width
+  bottom_height: 4      # Initial spatial height
+  resolution: 64        # Output height
+  G_kernel_size: 3      # Convolution kernel size
+  G_attn: '0'           # Attention layer positions (disabled in base)
+  num_G_SVs: 1          # Spectral norm singular values
+  num_G_SV_itrs: 1      # Power iteration steps
+  G_param: 'SN'         # Use Spectral Normalization
+  init: 'N02'           # Normal initialization (std=0.02)
+
+# =============================================================================
+# DISCRIMINATOR ARCHITECTURE  
+# =============================================================================
+DiscModel:
+  D_ch: 64              # Base channel multiplier
+  D_wide: true          # Use wider architecture
+  resolution: 64        # Input height
+  D_kernel_size: 3      # Convolution kernel size
+  num_D_SVs: 1          # Spectral norm singular values
+  D_param: 'SN'         # Use Spectral Normalization
+  output_dim: 1         # Scalar output (real/fake score)
+  one_hot: true         # Use one-hot text conditioning
+
+# Patch Discriminator (for local details)
+PatchDiscModel:
+  resolution: 32        # Operates on 32×32 patches
+  D_ch: 64
+  D_wide: true
+
+# =============================================================================
+# ENCODER & AUXILIARY NETWORKS
+# =============================================================================
+StyBackbone:
+  resolution: 16        # Downsampling factor
+  max_dim: 256          # Maximum channel dimension
+  in_channel: 1         # Grayscale input
+  norm: 'bn'            # Batch normalization
+
+EncModel:
+  style_dim: 32         # Output dimension
+  in_dim: 256           # Input from backbone
+
+WidModel:
+  n_writer: 372         # Number of writers in IAM dataset
+  in_dim: 256           # Input from backbone
+
+OcrModel:
+  n_class: 80           # Character classes
+  rnn_depth: 2          # BiLSTM layers
+  bidirectional: true   # Bidirectional LSTM
+  max_dim: 256          # Feature dimension
+
+# =============================================================================
+# TRAINING CONFIGURATION
+# =============================================================================
+training:
+  epochs: 70            # Total training epochs
+  batch_size: 24        # Batch size (actual, may differ from config)
+  lr: 2.0e-4            # Learning rate
+  adam_b1: 0.5          # Adam beta1 (momentum)
+  adam_b2: 0.999        # Adam beta2
+  
+  # Learning rate schedule
+  lr_policy: 'linear'   # Linear decay
+  start_decay_epoch: 25 # Start decaying LR
+  n_epochs_decay: 46    # Epochs to decay over
+  
+  # GAN training dynamics
+  num_critic_train: 4   # D updates per G update (D:G = 4:1)
+  
+  # VAE mode
+  vae_mode: true        # Enable VAE for style encoder
+  lambda_kl: 0.0001     # KL divergence weight
+  lambda_ctx: 1.0       # Contextual loss weight
+  lambda_gram: 2.0      # Gram style loss weight
+  
+  # Text generation
+  capitalize_ratio: 0.5 # 50% chance to capitalize
+  blank_ratio: 0.0      # No blank words
+  
+  # Pretrained models (frozen during training)
+  pretrained_w: './pretrained/wid_iam_new.pth'  # Writer ID
+  pretrained_r: './pretrained/ocr_iam_new.pth'  # OCR
+
+# =============================================================================
+# IMPROVEMENT-SPECIFIC PARAMETERS
+# =============================================================================
 # Transformer (Novelty 4)
 transformer_layers: 2
 transformer_heads: 4
-transformer_ff_dim: 608  # 4 × (embed_dim + style_dim)
+transformer_ff_dim: 608  # 4 × combined_dim = 4 × 152
 
 # BiGRU (Novelty 3)
 bigru_layers: 1
-bigru_hidden: 152       # Same as input
+bigru_hidden: 152       # Same as combined_dim
 
 # Cross-Attention (Novelty 2)
 cross_attn_heads: 4
 cross_attn_dropout: 0.1
 
-# Training
-batch_size: 24
-learning_rate: 1.5e-4
-adam_beta1: 0.5
-adam_beta2: 0.999
-num_critic_train: 5     # D updates per G update
-epochs: 70
-
-# Contrastive (Novelty 5)
-contrastive_temperature: 0.07
+# Self-Attention in Generator
+# Applied at resolution 32 and 64 for spatial coherence
 ```
+
+### Key Dimension Relationships
+
+| Dimension | Value | Derivation |
+|-----------|-------|------------|
+| `combined_dim` | 152 | `embed_dim + style_dim = 120 + 32` |
+| `transformer_ff` | 608 | `4 × combined_dim = 4 × 152` |
+| `head_dim` | 38 | `combined_dim / num_heads = 152 / 4` |
+| `output_width` | L × 32 | `num_chars × char_width` |
+| `bottleneck_channels` | 512 | `8 × G_ch = 8 × 64` |
+
+### Training Dynamics
+
+**Discriminator:Generator Update Ratio = 4:1**
+```
+Iteration 1: Train D only
+Iteration 2: Train D only  
+Iteration 3: Train D only
+Iteration 4: Train D only
+Iteration 5: Train D + Train G  ← G trains every 4th iteration
+...
+```
+
+**Why 4:1?**
+- Gives D time to provide meaningful gradients
+- Prevents G from outpacing D (mode collapse)
+- Stabilizes adversarial training
 
 ---
 
@@ -1131,8 +1750,59 @@ Example: "hello" (5 chars) → 160 pixels wide
 - **BigGAN**: Large Scale GAN Training for High Fidelity Natural Image Synthesis
 - **Transformer**: Attention Is All You Need
 - **InfoNCE**: Representation Learning with Contrastive Predictive Coding
+- **CTC Loss**: Connectionist Temporal Classification (Graves et al.)
+- **Spectral Normalization**: Spectral Normalization for GANs (Miyato et al.)
+- **AdaIN**: Arbitrary Style Transfer in Real-time (Huang & Belongie)
+
+---
+
+## 🔢 Quick Reference: All Dimensions
+
+| Component | Input Shape | Output Shape | Key Parameters |
+|-----------|-------------|--------------|----------------|
+| **Text Embedding** | `[B, L]` | `[B, L, 120]` | vocab=80, dim=120 |
+| **Style Backbone** | `[B, 1, 64, W]` | `[B, 256, W/16]` | 6 ResBlocks |
+| **Style Encoder** | `[B, 256]` | `[B, 32]` | VAE: μ, σ |
+| **Cross-Attention** | Q:`[B, L, 152]`, K/V:`[B, 1, 32]` | `[B, L, 152]` | 4 heads, dim=38 |
+| **Transformer** | `[B, L, 152]` | `[B, L, 152]` | 2 layers, 4 heads |
+| **BiGRU** | `[B, L, 152]` | `[B, L, 152]` | bidirectional |
+| **Generator** | `[B, L, 152]` + style | `[B, 1, 64, 32L]` | 4 GBlocks |
+| **Discriminator** | `[B, 1, 64, W]` | `[B, 1]` | 5 DBlocks |
+| **Recognizer** | `[B, 1, 64, W]` | `[B, W/16, 80]` | BiLSTM+CTC |
+| **Writer ID** | `[B, 1, 64, W]` | `[B, 372]` | 372 writers |
+
+---
+
+## 📝 VAE Reparameterization Trick
+
+The Style Encoder uses VAE mode for smooth style interpolation:
+
+```python
+def reparameterize(mu, logvar):
+    """
+    The reparameterization trick enables backprop through sampling.
+    
+    Problem: We want z ~ N(μ, σ²), but sampling is not differentiable.
+    
+    Solution: z = μ + σ × ε, where ε ~ N(0, 1)
+    
+    Now z is a deterministic function of (μ, σ, ε), and gradients
+    can flow through μ and σ to the encoder.
+    """
+    std = torch.exp(0.5 * logvar)  # σ = exp(0.5 × log(σ²))
+    eps = torch.randn_like(std)     # ε ~ N(0, 1)
+    return mu + eps * std           # z = μ + σε
+```
+
+**Why VAE for Handwriting?**
+- Enables smooth interpolation between writer styles
+- Regularizes latent space to prevent overfitting
+- Allows random sampling: z ~ N(0,1) generates plausible styles
+
+**KL Loss** keeps the latent distribution close to N(0,1):
+$$L_{KL} = -\frac{1}{2}\sum_{j=1}^{32}(1 + \log(\sigma_j^2) - \mu_j^2 - \sigma_j^2)$$
 
 ---
 
 *Architecture documentation generated for the HiGAN+ handwriting style transfer system.*
-*Last updated: November 2025*
+*Last updated: December 2025*

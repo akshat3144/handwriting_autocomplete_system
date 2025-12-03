@@ -130,7 +130,7 @@ g_loss = (
     gp_info * info_loss +                            # Style consistency (1.5x)
     gp_wid * fake_wid_loss +                         # Writer ID (1.5x)
     gp_recn * recn_loss_val +                        # Reconstruction (5.0x) ← KEY CHANGE
-    cfg.training.lambda_ctx * ctx_loss_val +         # Contextual (keep config)
+    cfg.training.lambda_ctx * ctx_loss_val +         #  ual (keep config)
     cfg.training.lambda_kl * kl_loss_val             # KL divergence (keep config)
 )
 
