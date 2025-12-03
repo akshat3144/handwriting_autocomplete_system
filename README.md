@@ -11,6 +11,8 @@ date: "December 2025"
 
 **Repository**: [https://github.com/akshat3144/handwriting_autocomplete_system](https://github.com/akshat3144/handwriting_autocomplete_system)
 
+![Style Interpolation Across Writers](report_assets/style_interpolation_multilingual.gif)
+
 # Abstract
 
 We present **CrossStyloGAN**, a novel end-to-end deep learning system providing intelligent autocomplete while generating text in a user's unique handwriting style. The system integrates: (1) a CRNN-based OCR module achieving 4.1% CER and 11.9% WER, (2) a GPT-2 language model (124M parameters) achieving perplexity of 18.4, and (3) CrossStyloGAN, a transformer-enhanced GAN with eight architectural innovations.
@@ -32,6 +34,8 @@ Given handwritten text from a writer and partially completed input, our system m
 3. **Generate predictions in the writer's unique style** maintaining visual consistency
 
 This enables applications in education (students maintain cognitive benefits of handwriting while receiving assistance), accessibility (individuals with motor challenges), and digital note-taking.
+
+<video src="DL Video_Submission.mp4" controls width="600"></video>
 
 ## Our Contributions
 
@@ -375,7 +379,6 @@ $$\mathcal{L}_{\text{total}} = \mathcal{L}_{\text{adv}} + 3.0 \mathcal{L}_{\text
 
 **Analysis**: All components contribute positively. AdaIN/ModConv (#1) and Cross-Attention (#2) provide largest gains (4.05 and 3.22 FID). Contrastive Loss (#5) most critical for writer identity consistency.
 
-![Style Interpolation Across Writers](report_assets/style_interpolation_multilingual.gif)
 
 *Figure: Smooth interpolation between different writer styles demonstrates the learned continuous latent space and effective style disentanglement in CrossStyloGAN.*
 
