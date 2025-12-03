@@ -21,7 +21,7 @@ On the IAM Handwriting Database, CrossStyloGAN achieves FID of **4.36** (63.4% i
 
 ---
 ``` Click above for Explanation Video```
-[![Explanation Video]](https://youtu.be/McWWeF_tT6s)
+[![Explanation Video](https://img.youtube.com/vi/McWWeF_tT6s/0.jpg)](https://youtu.be/McWWeF_tT6s)
 
 
 # Introduction
