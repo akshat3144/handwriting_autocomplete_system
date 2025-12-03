@@ -20,9 +20,12 @@ We present **CrossStyloGAN**, a novel end-to-end deep learning system providing 
 On the IAM Handwriting Database, CrossStyloGAN achieves FID of **4.36** (63.4% improvement over HiGAN+), KID of **0.00187** (77.0% improvement), WER of **2.48%** (65.8% improvement), and CER of **0.65%** (89.3% improvement). The complete pipeline enables real-time generation at **~1.2 seconds per word** on consumer hardware.
 
 ---
-``` Click above for Explanation Video```
-[![Explanation Video](https://img.youtube.com/vi/McWWeF_tT6s/0.jpg)](https://youtu.be/McWWeF_tT6s)
-
+<h2 align="center">📺 Explanation Video</h2>
+<p align="center">
+  <a href="https://youtu.be/McWWeF_tT6s">
+    <img src="https://img.youtube.com/vi/McWWeF_tT6s/hqdefault.jpg" alt="Video" />
+  </a>
+</p>
 
 # Introduction
 
