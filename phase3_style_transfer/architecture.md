@@ -263,17 +263,34 @@ class SelfAttention(nn.Module):
         return self.gamma * out + x
 ```
 
-**Dimension Example** (at 64×320 resolution):
+**Dimension Example** (at resolution with C=64 channels, H=8, W=40):
 ```
-Input:  [B, 64, 64, 320]
-Query:  [B, 8, 20480]   (64/8 = 8 channels, 64×320 = 20480 positions)
-Key:    [B, 8, 20480]
-Value:  [B, 64, 20480]
-Attention: [B, 20480, 20480]  ← Each position attends to all others
-Output: [B, 64, 64, 320]
+Input:  [B, 64, 8, 40]  ← Feature map from GBlock
+Query:  [B, 8, 320]     (64/8 = 8 channels, 8×40 = 320 positions)
+Key:    [B, 8, 320]
+Value:  [B, 64, 320]    (full channels preserved)
+Attention: [B, 320, 320]  ← Each spatial position attends to all others
+Output: [B, 64, 8, 40]
 ```
 
-**Why for Handwriting**: Ensures consistent stroke style across the entire word.
+**⚠️ Important: Two Different Attention Mechanisms in This Model**
+
+| Attention Type | Location | Query Dim | Key Dim | Purpose |
+|----------------|----------|-----------|---------|---------|
+| **Self-Attention** | `BigGAN_layers.py` | C//8 (spatial) | C//8 (spatial) | Pixel-to-pixel coherence |
+| **Cross-Attention** | `improved_layers.py` | 152 (text) | 32 (style) | Style-content fusion |
+
+**Self-Attention** (here): Spatial, operates on feature maps [B, C, H, W]
+- Query/Key: Reduced channels (C//8) for efficiency
+- Value: Full channels (C) for expressiveness
+- Used in Generator blocks for spatial coherence
+
+**Cross-Attention** (Novelty 2): Semantic, operates on sequences [B, L, D]
+- Query: Text features (152-dim = embed + style)
+- Key/Value: Style vector (32-dim)
+- Used to fuse style information into text features
+
+**Why for Handwriting**: Self-attention ensures consistent stroke style across the entire word spatially.
 
 ### GBlock (Generator Block)
 
@@ -1676,6 +1693,11 @@ Iteration 4: Train D only
 Iteration 5: Train D + Train G  ← G trains every 4th iteration
 ...
 ```
+
+**Why 4:1?**
+- Gives D time to provide meaningful gradients
+- Prevents G from outpacing D (mode collapse)
+- Stabilizes adversarial training
 
 **Why 4:1?**
 - Gives D time to provide meaningful gradients
