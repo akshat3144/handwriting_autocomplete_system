@@ -14,11 +14,12 @@ from networks.improved_layers import (
 from networks.BigGAN_networks import Generator, ImprovedGenerator, Discriminator
 from networks.multi_scale_discriminator import MultiScaleDiscriminator, ProgressiveDiscriminator
 
-all_models = {
-    'gl_adversarial_model': GlobalLocalAdversarialModel,
-    'recognize_model': RecognizeModel,
-    'identifier_model': WriterIdentifyModel
-}
+# Commented out to avoid undefined name errors during inference
+# all_models = {
+#     'gl_adversarial_model': GlobalLocalAdversarialModel,
+#     'recognize_model': RecognizeModel,
+#     'identifier_model': WriterIdentifyModel
+# }
 
 
 # def get_model(name):
