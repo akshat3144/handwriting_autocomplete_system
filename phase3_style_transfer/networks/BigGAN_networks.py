@@ -1,3 +1,38 @@
+"""
+=============================================================================
+GENERATOR AND DISCRIMINATOR FOR HiGAN+ HANDWRITING GENERATION
+=============================================================================
+
+This file contains the core GAN models:
+
+1. Generator:
+   - Input: style_vector (32-dim) + text (character indices)
+   - Output: handwriting image [B, 1, 64, W]
+   - Uses BigGAN-style architecture with conditional batch norm
+
+2. Discriminator:
+   - Input: handwriting image [B, 1, 64, W]
+   - Output: real/fake score (scalar)
+   - Uses spectral normalization for stability
+
+3. PatchDiscriminator:
+   - Input: 32x32 patches extracted from images
+   - Output: real/fake score per patch
+   - Focuses on local texture quality
+
+KEY CONCEPTS:
+- Spectral Normalization: Stabilizes discriminator training
+- Conditional BatchNorm: Injects style into generator layers
+- Self-Attention: Captures long-range character dependencies
+- Hinge Loss: More stable than vanilla GAN loss
+
+TRAINING FLOW:
+    1. D sees real + fake images → outputs real/fake scores
+    2. D loss = ReLU(1 - D(real)) + ReLU(1 + D(fake))  [Hinge loss]
+    3. G generates images → D judges them
+    4. G loss = -D(fake) + auxiliary losses (CTC, WID, reconstruction)
+=============================================================================
+"""
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: MIT
 import functools
@@ -14,22 +49,72 @@ from .improved_layers import (
 )
 from networks.utils import init_weights, _len2mask
 
-# Architectures for G
-# Attention is passed in in the format '32_64' to mean applying an attention
-# block at both resolution 32x32 and 64x64. Just '64' will apply at 64x64.
+
+# =============================================================================
+# GENERATOR ARCHITECTURE CONFIGURATION
+# =============================================================================
 def G_arch(ch=64, attention='64', ksize='333333', dilation='111111'):
+    """
+    Define Generator architecture for different resolutions.
+    
+    The generator progressively upsamples from 4x4 to 64xW:
+        4x4 → 8x8 → 16x16 → 32x32 → 64x64
+    
+    Args:
+        ch: Base channel multiplier (64)
+        attention: Which resolutions get self-attention ('32_64' = both 32 and 64)
+    
+    Returns:
+        arch: Dict with channel configs, upsample factors, attention flags
+    """
     arch = {}
 
-    arch[64] = {'in_channels': [ch * item for item in [8, 4, 2, 1]],
-                'out_channels': [ch * item for item in [4, 2, 1, 1]],
-                'upsample': [(2,1), (2,2), (2,2), (2,2)],
-                'resolution': [8, 16, 32, 64],
-                'attention': {2 ** i: (2 ** i in [int(item) for item in attention.split('_')])
-                              for i in range(2, 7)}}
+    # Resolution 64 (our target height)
+    arch[64] = {
+        'in_channels': [ch * item for item in [8, 4, 2, 1]],      # [512, 256, 128, 64]
+        'out_channels': [ch * item for item in [4, 2, 1, 1]],     # [256, 128, 64, 64]
+        'upsample': [(2,1), (2,2), (2,2), (2,2)],                  # (height, width) scale factors
+        'resolution': [8, 16, 32, 64],                             # Resolution at each block
+        'attention': {2 ** i: (2 ** i in [int(item) for item in attention.split('_')])
+                      for i in range(2, 7)}  # Which resolutions get attention
+    }
     return arch
 
 
+# =============================================================================
+# GENERATOR: Style + Text → Handwriting Image
+# =============================================================================
 class Generator(nn.Module):
+    """
+    BigGAN-style Generator for handwriting synthesis.
+    
+    CORE IDEA: Combine a style vector (writing style) with text embeddings
+    (what to write) to generate realistic handwriting images.
+    
+    ARCHITECTURE:
+        Input:
+            z: [B, 32] style vector (from random or StyleEncoder)
+            y: [B, max_len] character indices (e.g., [7, 4, 11, 11, 14] = "hello")
+            y_lens: [B] actual text lengths
+        
+        Processing:
+            1. Embed characters: y → [B, max_len, 120]
+            2. Concatenate style with each character: [B, max_len, 32+120]
+            3. Project to initial feature map: [B, 512, 4, max_len*4]
+            4. Upsample through GBlocks with style conditioning
+            5. Apply self-attention at resolutions 32 and 64
+            6. Output layer: BN → ReLU → Conv → Tanh
+        
+        Output:
+            image: [B, 1, 64, W] where W = max_len * char_width (32 pixels/char)
+    
+    KEY COMPONENTS:
+        - text_embedding: Character → 120-dim vector
+        - filter_linear: Initial projection to 4x4 feature map
+        - style_linear: Style → per-block conditioning vectors
+        - GBlocks: Residual blocks with conditional batch norm
+        - Attention: Self-attention for long-range dependencies
+    """
     def __init__(self, G_ch=64, style_dim=32, embed_dim=120,
                  bottom_width=4, bottom_height=4, resolution=128,
                  G_kernel_size=3, G_attn='64', n_class=1000,
@@ -42,54 +127,64 @@ class Generator(nn.Module):
                  ):
         super(Generator, self).__init__()
         dim_z = style_dim
-        self.style_dim = style_dim
+        self.style_dim = style_dim      # 32-dimensional style vector
         self.name = 'G'
-        # Channel width mulitplier
-        self.ch = G_ch
-        # Dimensionality of the latent space
-        self.dim_z = dim_z
-        self.embed_dim = embed_dim
-        # The initial width dimensions
-        self.bottom_width = bottom_width
-        # The initial height dimension
-        self.bottom_height = bottom_height
-        # Resolution of the output
-        self.resolution = resolution
-        # Kernel size?
+        
+        # Channel width multiplier
+        self.ch = G_ch  # Base channels (64)
+        
+        # Dimensionality of the latent space (style)
+        self.dim_z = dim_z  # 32
+        self.embed_dim = embed_dim  # Character embedding dim (120)
+        
+        # Initial feature map dimensions (before upsampling)
+        self.bottom_width = bottom_width    # 4 pixels wide per character
+        self.bottom_height = bottom_height  # 4 pixels tall
+        
+        # Target output resolution (height)
+        self.resolution = resolution  # 64
+        
+        # Kernel size for convolutions
         self.kernel_size = G_kernel_size
-        # Attention?
-        self.attention = G_attn
-        # number of classes, for use in categorical conditional generation
-        self.n_classes = n_class
-        # Cross replica batchnorm?
+        
+        # Which resolutions get self-attention
+        self.attention = G_attn  # '32_64' = attention at 32x32 and 64x64
+        
+        # Number of character classes (alphabet size)
+        self.n_classes = n_class  # 80 (a-z, A-Z, 0-9, punctuation, blank)
+        
+        # Batch norm settings
         self.cross_replica = cross_replica
-        # Use my batchnorm?
         self.mybn = mybn
-        # nonlinearity for residual blocks
+        
+        # Activation function
         self.activation = G_activation
-        # Initialization style
+        
+        # Initialization style ('ortho' = orthogonal init)
         self.init = init
-        # Parameterization style
+        
+        # Parameterization ('SN' = spectral normalization)
         self.G_param = G_param
-        # Normalization style
         self.norm_style = norm_style
-        # Epsilon for BatchNorm?
         self.BN_eps = BN_eps
-        # Epsilon for Spectral Norm?
         self.SN_eps = SN_eps
-        # fp16?
         self.fp16 = G_fp16
-        # Architecture dict
+        
+        # Get architecture config for this resolution
         self.arch = G_arch(self.ch, self.attention)[resolution]
         self.bn_linear = bn_linear
 
-        self.z_chunk_size = self.dim_z
+        self.z_chunk_size = self.dim_z  # 32
 
+        # ===== CHARACTER EMBEDDING =====
+        # Maps character indices to dense vectors
+        # e.g., 'a' (index 0) → [0.1, -0.3, 0.5, ..., 0.2] (120-dim)
         self.text_embedding = nn.Embedding(self.n_classes, self.embed_dim,
                                            padding_idx=embed_pad_idx,
                                            max_norm=embed_max_norm)
 
-        # Which convs, batchnorms, and linear layers to use
+        # ===== CHOOSE LAYER TYPES =====
+        # Use spectral normalization for stability
         if self.G_param == 'SN':
             self.which_conv = functools.partial(layers.SNConv2d,
                                                 kernel_size=3, padding=1,
@@ -107,22 +202,28 @@ class Generator(nn.Module):
         else:
             bn_linear = nn.Linear
 
+        # Conditional BatchNorm: injects style into each layer
         self.which_bn = functools.partial(layers.ccbn,
                                           which_linear=bn_linear,
                                           cross_replica=self.cross_replica,
                                           mybn=self.mybn,
-                                          input_size=self.z_chunk_size,
+                                          input_size=self.z_chunk_size,  # 32 (style dim)
                                           norm_style=self.norm_style,
                                           eps=self.BN_eps)
 
+        # ===== INITIAL PROJECTION =====
+        # Maps (style + char_embed) to initial feature map
+        # Input: [B, max_len, 32 + 120] → Output: [B, 512 * 4 * 4, max_len]
         self.filter_linear = self.which_linear(self.embed_dim + self.z_chunk_size,
                                         self.arch['in_channels'][0] * (self.bottom_width * self.bottom_height))
+        
+        # Style projection for each GBlock
+        # Splits 32-dim style into 4 chunks (one per block)
         self.style_linear = self.which_linear(self.z_chunk_size,
                                               self.z_chunk_size * len(self.arch['in_channels']))
 
-        # self.blocks is a doubly-nested list of modules, the outer loop intended
-        # to be over blocks at a given resolution (resblocks and/or self-attention)
-        # while the inner loop is over a given block
+        # ===== RESIDUAL BLOCKS (GBlocks) =====
+        # Each GBlock: upsamples + applies conditional batch norm with style
         self.blocks = []
         for index in range(len(self.arch['out_channels'])):
             self.blocks += [[layers.GBlock(in_channels=self.arch['in_channels'][index],
@@ -135,72 +236,91 @@ class Generator(nn.Module):
                                                                        scale_factor=self.arch['upsample'][index])
                                                      if index < len(self.arch['upsample']) else None))]]
 
-            # If attention on this block, attach it to the end
-            # print('index ', index, self.arch['resolution'][index])
+            # Add self-attention at specified resolutions
             if self.arch['attention'][self.arch['resolution'][index]]:
                 print('Adding attention layer in G at resolution %d' % self.arch['resolution'][index])
                 self.blocks[-1] += [layers.Attention(self.arch['out_channels'][index], self.which_conv)]
 
-        # Turn self.blocks into a ModuleList so that it's all properly registered.
+        # Convert to ModuleList for proper registration
         self.blocks = nn.ModuleList([nn.ModuleList(block) for block in self.blocks])
 
-        # output layer: batchnorm-relu-conv.
-        # Consider using a non-spectral conv here
+        # ===== OUTPUT LAYER =====
+        # Final processing: BN → ReLU → Conv → Tanh (to [-1, 1] range)
         self.output_layer = nn.Sequential(layers.bn(self.arch['out_channels'][-1],
                                                     cross_replica=self.cross_replica,
                                                     mybn=self.mybn),
                                           self.activation,
                                           self.which_conv(self.arch['out_channels'][-1], input_nc))
 
-        # Initialize weights. Optionally skip init for testing.
+        # Initialize weights
         if self.init != 'none':
             init_weights(self, self.init)
 
-    # Note on this forward function: we pass in a y vector which has
-    # already been passed through G.shared to enable easy class-wise
-    # interpolation later. If we passed in the one-hot and then ran it through
-    # G.shared in this forward function, it would be harder to handle.
     def forward(self, z, y, y_lens):
-        # If hierarchical, concatenate zs and ys
-        #if self.hier:
+        """
+        Generate handwriting image from style and text.
+        
+        Args:
+            z: [B, 32] style vector (random or from StyleEncoder)
+            y: [B, max_len] character indices (0-79)
+            y_lens: [B] actual text lengths (for masking)
+        
+        Returns:
+            output: [B, 1, 64, W] generated grayscale image
+                    W = max_len * 32 (32 pixels per character)
+        """
+        # Split style into per-block conditioning vectors
+        # [B, 32] → [B, 32] x 4 (one for each GBlock)
         ys = self.style_linear(z).split(32, dim=1)
 
-        # This is the change we made to the Big-GAN generator architecture.
-        # The input goes into classes go into the first layer only.
+        # ===== STEP 1: EMBED TEXT + CONCATENATE STYLE =====
+        # y: [B, max_len] → [B, max_len, 120]
         y = self.text_embedding(y).float().to(y.device)
+        
+        # Concatenate style with each character embedding
+        # z: [B, 32] → [B, max_len, 32] (repeat for each character)
+        # Then concat: [B, max_len, 32 + 120] = [B, max_len, 152]
         z = torch.cat((z.unsqueeze(1).repeat(1, y.shape[1], 1), y), 2)
+        
+        # ===== STEP 2: PROJECT TO INITIAL FEATURE MAP =====
+        # [B, max_len, 152] → [B, max_len, 512 * 4 * 4]
         h = self.filter_linear(z)
 
-        # Reshape - when y is not a single class value but rather an array of classes, the reshape is needed to create
-        # a separate vertical patch for each input.
+        # Reshape to 4D: each character becomes a 4-pixel-wide column
+        # [B, max_len, 8192] → [B, 512, 4, max_len * 4]
         h = h.view(h.size(0), h.shape[1] * self.bottom_width, self.bottom_height, -1)
-        h = h.permute(0, 3, 2, 1)
+        h = h.permute(0, 3, 2, 1)  # [B, C, H, W]
 
-        # Loop over blocks
+        # ===== STEP 3: UPSAMPLE THROUGH GBLOCKS =====
         len_scale = 1
-        x_lens = y_lens * self.bottom_width
+        x_lens = y_lens * self.bottom_width  # Track width at each resolution
+        
         for index, blocklist in enumerate(self.blocks):
-            # Second inner loop in case block has multiple layers
             for block in blocklist:
                 if isinstance(block, layers.Attention):
+                    # Self-attention: captures long-range dependencies
                     h = block(h, x_lens=x_lens * len_scale)
                 else:
+                    # GBlock: upsample + conditional batch norm with style
                     h = block(h, y=ys[index])
-            len_scale *= self.arch['upsample'][index][1]
+            len_scale *= self.arch['upsample'][index][1]  # Update width scale
 
-        # Apply batchnorm-relu-conv-tanh at output
+        # ===== STEP 4: OUTPUT LAYER =====
+        # BN → ReLU → Conv → Tanh (output range [-1, 1])
         output = torch.tanh(self.output_layer(h))
 
-        # Mask blanks
+        # ===== STEP 5: MASK PADDING (during inference) =====
+        # Zero out pixels beyond actual text length
         if not self.training:
             out_lens = y_lens * output.size(-2) // 2
             mask = _len2mask(out_lens.int(), output.size(-1), torch.float32).to(z.device).detach()
             mask = mask.unsqueeze(1).unsqueeze(1)
-            output = output * mask + (mask - 1)
+            output = output * mask + (mask - 1)  # Padding → -1 (white)
 
         return output
 
     def _info_attention(self):
+        """Get attention maps for visualization/debugging."""
         attn_index = -1
         for index in range(len(self.arch['out_channels'])):
             if self.arch['attention'][self.arch['resolution'][index]]:
@@ -215,8 +335,17 @@ class Generator(nn.Module):
             out.append({'out': l._vis_out, 'gamma': l.gamma.item()})
         return out
 
-# Discriminator architecture, same paradigm as G's above
+
+# =============================================================================
+# DISCRIMINATOR ARCHITECTURE CONFIGURATION
+# =============================================================================
 def D_arch(ch=64, attention='64', input_nc=3):
+    """
+    Define Discriminator architecture for different resolutions.
+    
+    The discriminator progressively downsamples:
+        64xW → 32xW/2 → 16xW/4 → 8xW/8
+    """
     arch = {}
 
     arch[32] = {'in_channels': [input_nc] + [ch * item for item in [1, 2, 4]],
@@ -241,7 +370,39 @@ def D_arch(ch=64, attention='64', input_nc=3):
     return arch
 
 
+# =============================================================================
+# DISCRIMINATOR: Image → Real/Fake Score
+# =============================================================================
 class Discriminator(nn.Module):
+    """
+    BigGAN-style Discriminator for handwriting images.
+    
+    PURPOSE: Judge whether an image is real (from dataset) or fake (from Generator).
+    Trained adversarially with the Generator.
+    
+    ARCHITECTURE:
+        Input: [B, 1, 64, W] grayscale handwriting image
+        
+        Processing:
+            1. DBlocks with spectral norm (downsample 2x each)
+            2. Self-attention at resolution 64
+            3. Global sum pooling (handle variable widths)
+            4. Linear projection to scalar
+        
+        Output: [B, 1] real/fake score (higher = more real)
+    
+    LOSS (Hinge Loss):
+        D_loss = E[ReLU(1 - D(real))] + E[ReLU(1 + D(fake))]
+        
+        Meaning:
+        - D(real) should be > 1 (no loss)
+        - D(fake) should be < -1 (no loss)
+    
+    SPECTRAL NORMALIZATION:
+        - Constrains the Lipschitz constant of each layer
+        - Prevents discriminator from becoming too powerful
+        - More stable training than weight clipping or gradient penalty
+    """
     def __init__(self, D_ch=64, D_wide=True, resolution=128,
                  D_kernel_size=3, D_attn='64', n_class=1000,
                  num_D_SVs=1, num_D_SV_itrs=1, D_activation=nn.ReLU(inplace=False),
@@ -390,7 +551,7 @@ class ImprovedGenerator(nn.Module):
                  max_text_len=50
                  ):
         super().__init__()
-        
+
         self.name = 'ImprovedG'
         self.style_dim = style_dim
         self.ch = G_ch

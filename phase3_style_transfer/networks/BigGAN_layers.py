@@ -1,7 +1,38 @@
-''' Layers
-    This file contains various layers for the BigGAN models.
-    Enhanced with AdaIN, Modulated Convolutions, Cross-Attention, and more.
-'''
+"""
+=============================================================================
+BIGGAN LAYERS FOR HiGAN+ HANDWRITING GENERATION
+=============================================================================
+
+This file contains the core building blocks for the GAN:
+
+1. SPECTRAL NORMALIZATION:
+   - SNConv2d, SNLinear, SNEmbedding
+   - Stabilizes discriminator by constraining weight matrices
+   - Uses power iteration to estimate largest singular value
+
+2. GENERATOR BLOCKS:
+   - GBlock: Residual block with conditional batch norm (injects style)
+   - ccbn: Class-conditional batch norm (modulates features with style)
+   - AdaINGBlock: Alternative with AdaIN (StyleGAN-style)
+
+3. DISCRIMINATOR BLOCKS:
+   - DBlock: Residual block with spectral norm + downsampling
+
+4. ATTENTION:
+   - SelfAttention: Captures long-range dependencies in feature maps
+   - MultiHeadSelfAttention: Multi-head version for better attention
+
+5. NORMALIZATION:
+   - bn: Standard batch normalization
+   - myBN: Custom batch norm with standing stats
+   - fused_bn: Fused batch norm operation for efficiency
+
+KEY CONCEPTS:
+- Spectral Norm: ||W||_2 ≤ 1 (Lipschitz constraint)
+- Conditional BN: γ = f(z), β = g(z) where z is style
+- Self-Attention: Allows each position to attend to all others
+=============================================================================
+"""
 import math
 import torch
 import torch.nn as nn
@@ -10,7 +41,7 @@ from torch.nn import Parameter as P
 from .utils import _len2mask
 import matplotlib.pyplot as plt
 
-# Import improved layers
+# Import improved layers (AdaIN, Modulated Conv, etc.)
 from .improved_layers import (
     AdaIN, ModulatedConv2d, ModulatedGBlock, 
     MultiHeadCrossAttention, StyleContentCrossAttention,
@@ -19,98 +50,150 @@ from .improved_layers import (
 )
 
 
-# Projection of x onto y
+# =============================================================================
+# HELPER FUNCTIONS FOR SPECTRAL NORMALIZATION
+# =============================================================================
+
 def proj(x, y):
+    """Project vector x onto vector y."""
     return torch.mm(y, x.t()) * y / torch.mm(y, y.t())
 
 
-# Orthogonalize x wrt list of vectors ys
 def gram_schmidt(x, ys):
+    """
+    Orthogonalize x with respect to list of vectors ys.
+    
+    Used in power iteration to ensure orthogonal singular vectors.
+    """
     for y in ys:
         x = x - proj(x, y)
     return x
 
 
-# Apply num_itrs steps of the power method to estimate top N singular values.
 def power_iteration(W, u_, update=True, eps=1e-12):
-    # Lists holding singular vectors and values
+    """
+    Power method to estimate top singular value of weight matrix.
+    
+    PURPOSE: Spectral normalization divides weights by their largest
+    singular value, keeping the Lipschitz constant ≤ 1.
+    
+    ALGORITHM:
+    1. v = W^T @ u (right singular vector)
+    2. u = W @ v (left singular vector)  
+    3. σ = u^T @ W @ v (singular value)
+    
+    The method converges to the top singular value/vectors.
+    """
     us, vs, svs = [], [], []
     for i, u in enumerate(u_):
-        # Run one step of the power iteration
         with torch.no_grad():
+            # Compute right singular vector
             v = torch.matmul(u, W)
-            # Run Gram-Schmidt to subtract components of all other singular vectors
-            # print('v', v, 'vs', vs, 'eps', eps)
             v = F.normalize(gram_schmidt(v, vs), eps=eps)
-            # Add to the list
             vs += [v]
-            # Update the other singular vector
+            
+            # Compute left singular vector
             u = torch.matmul(v, W.t())
-            # Run Gram-Schmidt to subtract components of all other singular vectors
             u = F.normalize(gram_schmidt(u, us), eps=eps)
-            # Add to the list
             us += [u]
+            
             if update:
                 u_[i][:] = u
-        # Compute this singular value and add it to the list
+        
+        # Compute singular value: σ = u^T W v
         svs += [torch.squeeze(torch.matmul(torch.matmul(v, W.t()), u.t()))]
-        # svs += [torch.sum(F.linear(u, W.transpose(0, 1)) * v)]
     return svs, us, vs
 
 
-# Convenience passthrough function
+# =============================================================================
+# IDENTITY LAYER (Passthrough)
+# =============================================================================
 class identity(nn.Module):
+    """Identity layer - just passes input through unchanged."""
     def forward(self, input):
         return input
 
 
-# Spectral normalization base class
+# =============================================================================
+# SPECTRAL NORMALIZATION BASE CLASS
+# =============================================================================
 class SN(object):
+    """
+    Spectral Normalization base class.
+    
+    PURPOSE: Constrain the spectral norm (largest singular value) of weight
+    matrices to be ≤ 1. This:
+    1. Stabilizes GAN training (prevents discriminator explosion)
+    2. Enforces Lipschitz continuity
+    3. No hyperparameter tuning needed (unlike gradient penalty)
+    
+    HOW IT WORKS:
+    - Maintain estimates of top singular vectors (u, v)
+    - Each forward pass: update u, v via power iteration
+    - Divide weight by estimated singular value: W_normalized = W / σ_max
+    
+    Reference: "Spectral Normalization for GANs" (Miyato et al., 2018)
+    """
     def __init__(self, num_svs, num_itrs, num_outputs, transpose=False, eps=1e-12):
         # Number of power iterations per step
         self.num_itrs = num_itrs
-        # Number of singular values
+        # Number of singular values to track (usually just 1)
         self.num_svs = num_svs
-        # Transposed?
+        # Transpose for different layer types
         self.transpose = transpose
-        # Epsilon value for avoiding divide-by-0
+        # Small constant for numerical stability
         self.eps = eps
-        # Register a singular vector for each sv
+        
+        # Register buffers for singular vectors (not trainable)
         for i in range(self.num_svs):
             self.register_buffer('u%d' % i, torch.randn(1, num_outputs))
             self.register_buffer('sv%d' % i, torch.ones(1))
 
-    # Singular vectors (u side)
     @property
     def u(self):
+        """Get all left singular vectors."""
         return [getattr(self, 'u%d' % i) for i in range(self.num_svs)]
 
-    # Singular values;
-    # note that these buffers are just for logging and are not used in training.
     @property
     def sv(self):
+        """Get all singular values (for logging, not training)."""
         return [getattr(self, 'sv%d' % i) for i in range(self.num_svs)]
 
-    # Compute the spectrally-normalized weight
     def W_(self):
+        """
+        Compute spectrally-normalized weight matrix.
+        
+        Returns: W / σ_max (weight divided by largest singular value)
+        """
         W_mat = self.weight.view(self.weight.size(0), -1)
         if self.transpose:
             W_mat = W_mat.t()
-        # Apply num_itrs power iterations
+        
+        # Power iteration to estimate σ_max
         for _ in range(self.num_itrs):
-            # Run Gram-Schmidt to subtract components of all other singular vectors
-            # print('W_mat', W_mat, 'self.u', self.u, 'self.eps', self.eps)
             svs, us, vs = power_iteration(W_mat, self.u, update=self.training, eps=self.eps)
-            # Update the svs
+        
+        # Store singular value for logging
         if self.training:
-            with torch.no_grad():  # Make sure to do this in a no_grad() context or you'll get memory leaks!
+            with torch.no_grad():
                 for i, sv in enumerate(svs):
                     self.sv[i][:] = sv
+        
+        # Normalize weight by σ_max
         return self.weight / svs[0]
 
 
-# 2D Conv layer with spectral norm
+# =============================================================================
+# SPECTRAL NORMALIZED LAYERS
+# =============================================================================
+
 class SNConv2d(nn.Conv2d, SN):
+    """
+    2D Convolution with Spectral Normalization.
+    
+    Used in: Both Generator and Discriminator
+    Ensures each conv layer has Lipschitz constant ≤ 1.
+    """
     def __init__(self, in_channels, out_channels, kernel_size, stride=1,
                  padding=0, dilation=1, groups=1, bias=True,
                  num_svs=1, num_itrs=1, eps=1e-12):
@@ -119,13 +202,18 @@ class SNConv2d(nn.Conv2d, SN):
         SN.__init__(self, num_svs, num_itrs, out_channels, eps=eps)
 
     def forward(self, x):
+        # Use normalized weights instead of raw weights
         return F.conv2d(x, self.W_(), self.bias, self.stride,
                         self.padding, self.dilation, self.groups)
 
 
-# Linear layer with spectral norm
 class SNLinear(nn.Linear, SN):
-    def __init__(self, in_features, out_features,  bias=True,
+    """
+    Linear layer with Spectral Normalization.
+    
+    Used in: Discriminator output, Generator projections
+    """
+    def __init__(self, in_features, out_features, bias=True,
                  num_svs=1, num_itrs=1, eps=1e-12):
         nn.Linear.__init__(self, in_features, out_features, bias)
         SN.__init__(self, num_svs, num_itrs, out_features, eps=eps)
@@ -134,10 +222,13 @@ class SNLinear(nn.Linear, SN):
         return F.linear(x, self.W_(), self.bias)
 
 
-# Embedding layer with spectral norm
-# We use num_embeddings as the dim instead of embedding_dim here
-# for convenience sake
 class SNEmbedding(nn.Embedding, SN):
+    """
+    Embedding layer with Spectral Normalization.
+    
+    Used in: Character embeddings in Generator
+    Note: Uses num_embeddings as dim (transposed)
+    """
     def __init__(self, num_embeddings, embedding_dim, padding_idx=None,
                  max_norm=None, norm_type=2, scale_grad_by_freq=False,
                  sparse=False, _weight=None,
@@ -555,28 +646,45 @@ def groupnorm(x, norm_style):
     return F.group_norm(x, groups)
 
 
-# Class-conditional bn
-# output size is the number of channels, input size is for the linear layers
-# Andy's Note: this class feels messy but I'm not really sure how to clean it up
-# Suggestions welcome! (By which I mean, refactor this and make a pull request
-# if you want to make this more readable/usable).
+# =============================================================================
+# CLASS-CONDITIONAL BATCH NORMALIZATION (ccbn)
+# =============================================================================
 class ccbn(nn.Module):
+    """
+    Class-Conditional Batch Normalization.
+    
+    PURPOSE: Inject style information into the Generator.
+    Standard BN normalizes, then applies learnable γ and β.
+    CCBN makes γ and β FUNCTIONS of the style vector.
+    
+    FORMULA:
+        Standard BN: y = γ * normalize(x) + β
+        CCBN:        y = γ(z) * normalize(x) + β(z)
+        
+        Where z is the 32-dim style vector.
+    
+    WHY IT WORKS:
+    - Different styles → different γ and β
+    - This modulates feature statistics based on writing style
+    - Similar to AdaIN but with batch normalization
+    
+    Used in: Generator GBlocks (every upsampling layer)
+    """
     def __init__(self, output_size, input_size, which_linear, eps=1e-5, momentum=0.1,
                  cross_replica=False, mybn=False, norm_style='bn', ):
         super(ccbn, self).__init__()
         self.output_size, self.input_size = output_size, input_size
-        # Prepare gain and bias layers
-        self.gain = which_linear(input_size, output_size)
-        self.bias = which_linear(input_size, output_size)
-        # epsilon to avoid dividing by 0
+        
+        # Linear layers to produce γ and β from style vector
+        # Input: style vector [B, 32]
+        # Output: per-channel scale [B, C] and shift [B, C]
+        self.gain = which_linear(input_size, output_size)  # γ(z)
+        self.bias = which_linear(input_size, output_size)  # β(z)
+        
         self.eps = eps
-        # Momentum
         self.momentum = momentum
-        # Use cross-replica batchnorm?
         self.cross_replica = cross_replica
-        # Use my batchnorm?
         self.mybn = mybn
-        # Norm style?
         self.norm_style = norm_style
 
         if self.cross_replica:
@@ -588,13 +696,21 @@ class ccbn(nn.Module):
             self.register_buffer('stored_var', torch.ones(output_size))
 
     def forward(self, x, y):
-        # Calculate class-conditional gains and biases
+        """
+        Args:
+            x: [B, C, H, W] feature maps
+            y: [B, 32] style vector
+        
+        Returns:
+            [B, C, H, W] modulated features
+        """
+        # Compute style-dependent scale and shift
+        # gain = 1 + γ(z) to make it multiplicative around 1
         gain = (1 + self.gain(y)).view(y.size(0), -1, 1, 1)
         bias = self.bias(y).view(y.size(0), -1, 1, 1)
-        # If using my batchnorm
+        
         if self.mybn or self.cross_replica:
             return self.bn(x, gain=gain, bias=bias)
-        # else:
         else:
             if self.norm_style == 'bn':
                 out = F.batch_norm(x, self.stored_mean, self.stored_var, None, None,
@@ -614,29 +730,31 @@ class ccbn(nn.Module):
         return s.format(**self.__dict__)
 
 
-# Normal, non-class-conditional BN
+# =============================================================================
+# STANDARD BATCH NORMALIZATION (bn)
+# =============================================================================
 class bn(nn.Module):
+    """
+    Standard Batch Normalization (not class-conditional).
+    
+    Used in: Generator output layer
+    """
     def __init__(self, output_size, eps=1e-5, momentum=0.1,
                  cross_replica=False, mybn=False):
         super(bn, self).__init__()
         self.output_size = output_size
-        # Prepare gain and bias layers
+        # Learnable scale and shift
         self.gain = P(torch.ones(output_size), requires_grad=True)
         self.bias = P(torch.zeros(output_size), requires_grad=True)
-        # epsilon to avoid dividing by 0
         self.eps = eps
-        # Momentum
         self.momentum = momentum
-        # Use cross-replica batchnorm?
         self.cross_replica = cross_replica
-        # Use my batchnorm?
         self.mybn = mybn
 
         if self.cross_replica:
             self.bn = SyncBN2d(output_size, eps=self.eps, momentum=self.momentum, affine=False)
         elif mybn:
             self.bn = myBN(output_size, self.eps, self.momentum)
-        # Register buffers if neither of the above
         else:
             self.register_buffer('stored_mean', torch.zeros(output_size))
             self.register_buffer('stored_var', torch.ones(output_size))
@@ -651,13 +769,30 @@ class bn(nn.Module):
                                 self.bias, self.training, self.momentum, self.eps)
 
 
-# Generator blocks
-# Note that this class assumes the kernel size and padding (and any other
-# settings) have been selected in the main generator module and passed in
-# through the which_conv arg. Similar rules apply with which_bn (the input
-# size [which is actually the number of channels of the conditional info] must
-# be preselected)
+# =============================================================================
+# GENERATOR BLOCK (GBlock)
+# =============================================================================
 class GBlock(nn.Module):
+    """
+    Generator Residual Block with Conditional Batch Normalization.
+    
+    PURPOSE: Upsample features while conditioning on style.
+    
+    ARCHITECTURE:
+        Input: [B, C_in, H, W] + style vector
+        
+        Main path:
+            BN(style) → ReLU → Upsample → Conv → BN(style) → ReLU → Conv
+        
+        Skip path:
+            Upsample → 1x1 Conv (if channels change)
+        
+        Output: main + skip = [B, C_out, 2H, 2W]
+    
+    KEY: Conditional BN injects style at every layer!
+    
+    Used in: Generator (4 GBlocks for 4x → 64 upsampling)
+    """
     def __init__(self, in_channels, out_channels,
                  which_conv1=nn.Conv2d, which_conv2=nn.Conv2d, which_bn=bn, activation=None,
                  upsample=None):
@@ -667,45 +802,86 @@ class GBlock(nn.Module):
         self.which_conv1, self.which_conv2, self.which_bn = which_conv1, which_conv2, which_bn
         self.activation = activation
         self.upsample = upsample
-        # Conv layers
+        
+        # Main path convolutions
         self.conv1 = self.which_conv1(self.in_channels, self.out_channels)
         self.conv2 = self.which_conv2(self.out_channels, self.out_channels)
+        
+        # Skip connection (1x1 conv if channels change)
         self.learnable_sc = in_channels != out_channels or upsample
         if self.learnable_sc:
             self.conv_sc = self.which_conv1(in_channels, out_channels,
                                            kernel_size=1, padding=0)
-        # Batchnorm layers
+        
+        # Conditional batch norm layers (take style as input)
         self.bn1 = self.which_bn(in_channels)
         self.bn2 = self.which_bn(out_channels)
-        # upsample layers
+        
         self.upsample = upsample
 
     def forward(self, x, y, **kwargs):
+        """
+        Args:
+            x: [B, C_in, H, W] input features
+            y: [B, 32] style vector for conditional BN
+        
+        Returns:
+            [B, C_out, 2H, 2W] upsampled, style-conditioned features
+        """
+        # Main path: BN(style) → ReLU → Upsample → Conv
         h = self.activation(self.bn1(x, y))
-        # h = self.activation(x)
-        # h=x
         if self.upsample:
             h = self.upsample(h)
             x = self.upsample(x)
         h = self.conv1(h)
+        
+        # Second conv: BN(style) → ReLU → Conv
         h = self.activation(self.bn2(h, y))
-        # h = self.activation(h)
         h = self.conv2(h)
+        
+        # Skip connection
         if self.learnable_sc:
             x = self.conv_sc(x)
-        return h + x
+        
+        return h + x  # Residual connection
 
 
-# Residual block for the discriminator
+# =============================================================================
+# DISCRIMINATOR BLOCK (DBlock)
+# =============================================================================
 class DBlock(nn.Module):
+    """
+    Discriminator Residual Block with Spectral Normalization.
+    
+    PURPOSE: Downsample features while maintaining stability.
+    
+    ARCHITECTURE:
+        Input: [B, C_in, H, W]
+        
+        Main path:
+            [ReLU] → Conv → ReLU → Conv → [Downsample]
+        
+        Skip path:
+            [Downsample] → 1x1 Conv (if channels change)
+        
+        Output: main + skip = [B, C_out, H/2, W/2]
+    
+    KEY DIFFERENCES FROM GBlock:
+    - No batch norm (discriminator shouldn't use BN)
+    - Spectral normalized convolutions
+    - Downsamples instead of upsamples
+    - No style conditioning
+    
+    Used in: Discriminator (4 DBlocks for 64 → 4 downsampling)
+    """
     def __init__(self, in_channels, out_channels, which_conv=SNConv2d, wide=True,
                  preactivation=False, activation=None, downsample=None, ):
         super(DBlock, self).__init__()
         self.in_channels, self.out_channels = in_channels, out_channels
-        # If using wide D (as in SA-GAN and BigGAN), change the channel pattern
+        # Wide D: more channels in hidden layer (as in BigGAN)
         self.hidden_channels = self.out_channels if wide else self.in_channels
         self.which_conv = which_conv
-        self.preactivation = preactivation
+        self.preactivation = preactivation  # ReLU before first conv?
         self.activation = activation
         self.downsample = downsample
 
@@ -830,6 +1006,5 @@ class StyleContentAttentionBlock(nn.Module):
         out = out_seq.permute(0, 2, 1).view(B, C, H, W)
         
         return x + self.gamma * out
-
 
 # dogball

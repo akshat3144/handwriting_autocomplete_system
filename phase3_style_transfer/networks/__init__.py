@@ -1,5 +1,5 @@
-# Commented out to avoid metric module dependency during inference
-# from networks.model import RecognizeModel, WriterIdentifyModel, GlobalLocalAdversarialModel
+# Import model classes
+from networks.model import RecognizeModel, WriterIdentifyModel, GlobalLocalAdversarialModel
 
 # Import improved components
 from networks.improved_layers import (
@@ -22,5 +22,5 @@ from networks.multi_scale_discriminator import MultiScaleDiscriminator, Progress
 # }
 
 
-# def get_model(name):
-#     return all_models[name]
+def get_model(name):
+    return all_models[name]

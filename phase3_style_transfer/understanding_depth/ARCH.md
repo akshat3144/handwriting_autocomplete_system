@@ -6,17 +6,17 @@ HiGAN+ generates handwritten text by combining **content** (what to write) and *
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                     HiGAN+ ARCHITECTURE                      │
+│                     HiGAN+ ARCHITECTURE                     │
 ├─────────────────────────────────────────────────────────────┤
-│                                                              │
-│  GENERATION PATH:                                            │
+│                                                             │
+│  GENERATION PATH:                                           │
 │  Style Vector (z) + Text Labels (y) → Generator → Fake Image│
-│                                                              │
-│  DISCRIMINATION PATH:                                         │
+│                                                             │
+│  DISCRIMINATION PATH:                                       │
 │  Real/Fake Image → Discriminator → Real/Fake Score          │
 │  Real/Fake Image → Patch Discriminator → Local Scores       │
-│                                                              │
-│  AUXILIARY NETWORKS:                                         │
+│                                                             │
+│  AUXILIARY NETWORKS:                                        │
 │  Image → Style Encoder → Style Vector                       │
 │  Image → Recognizer (OCR) → Text Prediction                 │
 │  Image → Writer Identifier → Writer ID                      │
